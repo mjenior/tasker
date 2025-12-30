@@ -1,0 +1,83 @@
+version: '3'
+
+vars:
+  SHELL_RC:
+    sh: |
+      if [[ -f "${HOME}/.zshrc" && "$SHELL" == *"zsh"* ]]; then
+        echo "${HOME}/.zshrc"
+      else
+        echo "${HOME}/.bashrc"
+      fi
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  install:
+    desc: Install project dependencies with uv
+    cmds:
+      - uv pip install -e .
+    sources:
+      - pyproject.toml
+
+  sync:
+    desc: Sync dependencies from lock file
+    cmds:
+      - uv sync
+
+  lock:
+    desc: Update the lock file
+    cmds:
+      - uv lock
+
+  venv:
+    desc: Create virtual environment with uv
+    cmds:
+      - uv venv
+    status:
+      - test -d .venv
+
+  test:
+    desc: Run tests
+    deps: [install]
+    cmds:
+      - uv run pytest -v
+
+  aliases:
+    desc: Add daily/weekly alias commands to shell config
+    cmds:
+      - |
+        if grep -q "# Tasker aliases" "{{.SHELL_RC}}" 2>/dev/null; then
+          echo "Aliases already exist in {{.SHELL_RC}}. Run 'task aliases:remove' first to update."
+          exit 1
+        fi
+      - |
+        cat >> "{{.SHELL_RC}}" << 'EOF'
+
+        # Tasker aliases
+        alias daily='analyze-tasks --type daily'
+        alias weekly='analyze-tasks --type weekly'
+        EOF
+      - echo "Aliases added to {{.SHELL_RC}}"
+      - echo "Run 'source {{.SHELL_RC}}' or restart your terminal to use them."
+
+  aliases:remove:
+    desc: Remove aliases from shell config
+    cmds:
+      - sed -i '/# Tasker aliases/,/^alias weekly=/d' "{{.SHELL_RC}}"
+      - echo "Aliases removed from {{.SHELL_RC}}"
+
+  clean:
+    desc: Remove build artifacts and cache files
+    cmds:
+      - rm -rf build/ dist/ *.egg-info/ .pytest_cache/
+      - find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+      - find . -type f -name "*.pyc" -delete 2>/dev/null || true
+
+  clean:all:
+    desc: Remove all generated files including venv
+    deps: [clean]
+    cmds:
+      - rm -rf .venv/ uv.lock
