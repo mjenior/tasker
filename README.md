@@ -296,6 +296,68 @@ task clean          # Remove build artifacts
 task clean:all      # Remove all generated files including venv
 ```
 
+## Testing
+
+The project includes a comprehensive test suite using pytest. Tests are organized by module for maintainability.
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run all tests with verbose output
+pytest -v
+
+# Run tests for a specific module
+pytest tests/test_config.py
+pytest tests/test_files.py
+pytest tests/test_gdrive.py
+
+# Run tests with coverage report
+pytest --cov=tasker --cov-report=term-missing
+
+# Run only fast tests (skip slow integration tests)
+pytest -m "not slow"
+```
+
+### Test Structure
+
+```
+tests/
+├── conftest.py      # Shared fixtures (temp directories, mock data)
+├── test_config.py   # Configuration and environment tests
+├── test_prompts.py  # Prompt template tests
+├── test_image.py    # Image extraction tests
+├── test_gdrive.py   # Google Drive integration tests
+├── test_files.py    # File I/O operation tests
+├── test_analysis.py # Core analysis function tests
+└── test_cli.py      # CLI entry point tests
+```
+
+### Writing Tests
+
+Tests use `unittest.mock` (`Mock`, `MagicMock`, `patch`) to avoid:
+- Actual API calls to Claude or Google Drive
+- File system side effects
+- Network dependencies
+
+Example of mocking the Claude API:
+
+```python
+from unittest.mock import patch, MagicMock
+
+def test_analyze_tasks():
+    with patch("tasker.analysis.ChatAnthropic") as mock_llm:
+        mock_instance = MagicMock()
+        mock_response = MagicMock()
+        mock_response.content = "Analysis result"
+        mock_instance.invoke.return_value = mock_response
+        mock_llm.return_value = mock_instance
+
+        # Your test code here
+```
+
 ## Project Structure
 
 ```
@@ -305,15 +367,24 @@ tasker/
 ├── pyproject.toml     # Project dependencies and metadata
 ├── Taskfile.yml       # Task runner configuration
 ├── README.md
-└── tasker/            # Python package
-    ├── __init__.py    # Package exports
-    ├── config.py      # Configuration and environment handling
-    ├── prompts.py     # LangChain prompt templates
-    ├── image.py       # Image text extraction
-    ├── files.py       # File I/O operations (USB + Google Drive)
-    ├── gdrive.py      # Google Drive API integration
-    ├── analysis.py    # Core analysis functionality
-    └── cli.py         # Command-line interface
+├── tasker/            # Python package
+│   ├── __init__.py    # Package exports
+│   ├── config.py      # Configuration and environment handling
+│   ├── prompts.py     # LangChain prompt templates
+│   ├── image.py       # Image text extraction
+│   ├── files.py       # File I/O operations (USB + Google Drive)
+│   ├── gdrive.py      # Google Drive API integration
+│   ├── analysis.py    # Core analysis functionality
+│   └── cli.py         # Command-line interface
+└── tests/             # Test suite
+    ├── conftest.py    # Shared pytest fixtures
+    ├── test_config.py
+    ├── test_prompts.py
+    ├── test_image.py
+    ├── test_gdrive.py
+    ├── test_files.py
+    ├── test_analysis.py
+    └── test_cli.py
 ```
 
 ## Programmatic Usage
