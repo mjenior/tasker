@@ -102,7 +102,7 @@ ANTHROPIC_API_KEY=your-api-key-here
 Edit `config.yaml` to customize Claude model parameters:
 
 ```yaml
-model: claude-haiku-4-5-20241022
+model: claude-3-5-haiku-20241022
 temperature: 0.7
 max_tokens: 4096
 top_p: 1.0

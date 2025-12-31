@@ -32,7 +32,7 @@ Assume all tasks without completion markers (✓ or X) are intended for today un
 
 ## Output Format
 
-Produce a numbered list called "Daily Execution Order" with the following structure for each task:
+Produce a numbered list with the header "# Daily Execution Order — {current_date}" (include the current date in the header) with the following structure for each task:
 
 ```
 1. **Task Name** [Energy: High/Medium/Low] [Est: XXmin] [Today Portion]
@@ -52,7 +52,7 @@ After the execution order, include:
 ### Example Output
 
 ```
-# Daily Execution Order
+# Daily Execution Order — Monday, December 30, 2024
 
 1. **Review Q4 budget proposal** [Energy: High] [Est: 45min]
    - Open budget spreadsheet and identify top 3 discrepancies
