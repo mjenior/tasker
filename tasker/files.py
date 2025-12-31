@@ -154,7 +154,7 @@ def _collect_weekly_analyses_usb() -> tuple[str, Path, datetime, datetime]:
     weekly_dir = base_dir / "weekly"
 
     if not daily_dir.exists():
-        raise FileNotFoundError(f"Daily notes directory not found: {daily_dir}")
+        raise FileNotFoundError(f"daily notes directory not found: {daily_dir}")
 
     weekly_dir.mkdir(exist_ok=True)
 
@@ -326,7 +326,7 @@ def _collect_weekly_analyses_gdrive() -> tuple[str, Path, datetime, datetime]:
     try:
         files = client.list_notes_files("daily")
     except FileNotFoundError:
-        raise FileNotFoundError("Daily folder not found in Google Drive")
+        raise FileNotFoundError("daily folder not found in Google Drive")
 
     collected_analyses = []
     for file_info in sorted(files, key=lambda x: x["name"]):
