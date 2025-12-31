@@ -282,8 +282,13 @@ def is_gdrive_configured() -> bool:
 def parse_filename_datetime(filename: str) -> datetime | None:
     """Parse datetime from a notes filename.
 
+    Supports formats:
+        - YYYYMMDD_HHMMSS.ext (e.g., 20251225_073454.txt)
+        - YYYYMMDD_HHMMSS_Page_N.ext (e.g., 20251225_073454_Page_1.png)
+        - YYYYMMDD_HHMMSS.daily_analysis.txt (analysis files)
+
     Args:
-        filename: Filename in format YYYYMMDD_HHMMSS.ext
+        filename: Filename with timestamp prefix
 
     Returns:
         Parsed datetime, or None if parsing fails
@@ -294,9 +299,43 @@ def parse_filename_datetime(filename: str) -> datetime | None:
         # Handle analysis files (e.g., 20251225_074353.daily_analysis)
         if "." in stem:
             stem = stem.split(".")[0]
+
+        # Handle page identifiers (e.g., 20251225_073454_Page_1)
+        # Extract just the timestamp portion (first 15 chars: YYYYMMDD_HHMMSS)
+        if "_Page_" in stem:
+            stem = stem.split("_Page_")[0]
+
         return datetime.strptime(stem, "%Y%m%d_%H%M%S")
     except ValueError:
         return None
+
+
+def extract_timestamp_from_filename(filename: str) -> str | None:
+    """Extract the timestamp portion from a notes filename.
+
+    Handles filenames with optional page identifiers.
+
+    Args:
+        filename: Filename with timestamp prefix
+
+    Returns:
+        Timestamp string (YYYYMMDD_HHMMSS) or None if not found
+    """
+    stem = Path(filename).stem
+
+    # Handle analysis files
+    if "." in stem:
+        stem = stem.split(".")[0]
+
+    # Handle page identifiers
+    if "_Page_" in stem:
+        stem = stem.split("_Page_")[0]
+
+    # Validate it looks like a timestamp
+    if len(stem) == 15 and stem[8] == "_":
+        return stem
+
+    return None
 
 
 def get_file_extension(mime_type: str) -> str:

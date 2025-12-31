@@ -365,6 +365,22 @@ class TestParseFilenameDatetime:
 
         assert result == datetime(2025, 12, 29, 8, 0, 0)
 
+    def test_parses_page_identifier_filename(self):
+        """Should parse datetime from filename with page identifier."""
+        from tasker.gdrive import parse_filename_datetime
+
+        result = parse_filename_datetime("20251225_073454_Page_1.png")
+
+        assert result == datetime(2025, 12, 25, 7, 34, 54)
+
+    def test_parses_multi_digit_page_identifier(self):
+        """Should parse datetime from filename with multi-digit page number."""
+        from tasker.gdrive import parse_filename_datetime
+
+        result = parse_filename_datetime("20251225_073454_Page_15.png")
+
+        assert result == datetime(2025, 12, 25, 7, 34, 54)
+
     def test_returns_none_for_invalid_format(self):
         """Should return None for invalid filename format."""
         from tasker.gdrive import parse_filename_datetime
@@ -379,6 +395,59 @@ class TestParseFilenameDatetime:
 
         result = parse_filename_datetime("20251231.txt")
 
+        assert result is None
+
+
+class TestExtractTimestampFromFilename:
+    """Tests for extract_timestamp_from_filename function."""
+
+    def test_extracts_from_simple_filename(self):
+        """Should extract timestamp from simple filename."""
+        from tasker.gdrive import extract_timestamp_from_filename
+
+        result = extract_timestamp_from_filename("20251231_143000.txt")
+        assert result == "20251231_143000"
+
+    def test_extracts_from_png_filename(self):
+        """Should extract timestamp from PNG filename."""
+        from tasker.gdrive import extract_timestamp_from_filename
+
+        result = extract_timestamp_from_filename("20251225_073454.png")
+        assert result == "20251225_073454"
+
+    def test_extracts_from_page_identifier_filename(self):
+        """Should extract timestamp from filename with page identifier."""
+        from tasker.gdrive import extract_timestamp_from_filename
+
+        result = extract_timestamp_from_filename("20251225_073454_Page_1.png")
+        assert result == "20251225_073454"
+
+    def test_extracts_from_multi_digit_page(self):
+        """Should extract timestamp from filename with multi-digit page number."""
+        from tasker.gdrive import extract_timestamp_from_filename
+
+        result = extract_timestamp_from_filename("20251225_073454_Page_12.png")
+        assert result == "20251225_073454"
+
+    def test_extracts_from_analysis_filename(self):
+        """Should extract timestamp from analysis filename."""
+        from tasker.gdrive import extract_timestamp_from_filename
+
+        result = extract_timestamp_from_filename("20251225_073454.daily_analysis.txt")
+        assert result == "20251225_073454"
+
+    def test_returns_none_for_invalid_filename(self):
+        """Should return None for invalid filename."""
+        from tasker.gdrive import extract_timestamp_from_filename
+
+        result = extract_timestamp_from_filename("invalid_filename.txt")
+        assert result is None
+
+    def test_returns_none_for_short_filename(self):
+        """Should return None for filename without proper timestamp."""
+        from tasker.gdrive import extract_timestamp_from_filename
+
+        result = extract_timestamp_from_filename("20251225.txt")
         assert result is None
 
 

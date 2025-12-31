@@ -152,6 +152,87 @@ class TestLoadTaskNotesGdrive:
 
             assert content == "Extracted from GDrive image"
 
+    def test_loads_png_with_page_identifier_from_gdrive(self, temp_dir):
+        """Should load PNG file with page identifier from Google Drive."""
+        mock_client = MagicMock()
+        mock_client.list_notes_files.return_value = [
+            {"id": "file1", "name": "20251225_073454_Page_1.png", "mimeType": "image/png"}
+        ]
+        mock_client.file_exists.return_value = False
+        mock_client.download_file.return_value = bytes([
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+            0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
+            0xDE, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E,
+            0x44, 0xAE, 0x42, 0x60, 0x82
+        ])
+
+        with patch("tasker.files.get_active_source", return_value="gdrive"), \
+             patch("tasker.gdrive.GoogleDriveClient", return_value=mock_client), \
+             patch("tasker.files.extract_text_from_image") as mock_extract:
+            mock_extract.return_value = "Extracted from page 1"
+
+            from tasker.files import load_task_notes
+
+            content, path, file_date = load_task_notes("daily")
+
+            assert content == "Extracted from page 1"
+            assert file_date == datetime(2025, 12, 25, 7, 34, 54)
+
+    def test_skips_gdrive_page_file_with_existing_analysis(self):
+        """Should skip GDrive page file when analysis exists for that timestamp."""
+        mock_client = MagicMock()
+        mock_client.list_notes_files.return_value = [
+            {"id": "file1", "name": "20251228_100000_Page_1.png", "mimeType": "image/png"},
+            {"id": "file2", "name": "20251227_090000.txt", "mimeType": "text/plain"},
+        ]
+        # Analysis exists for first file's timestamp (not including page identifier)
+        def file_exists_side_effect(subfolder, filename):
+            return filename == "20251228_100000.daily_analysis.txt"
+
+        mock_client.file_exists.side_effect = file_exists_side_effect
+        mock_client.download_file_text.return_value = "Older notes from text file"
+
+        with patch("tasker.files.get_active_source", return_value="gdrive"), \
+             patch("tasker.gdrive.GoogleDriveClient", return_value=mock_client):
+            from tasker.files import load_task_notes
+
+            content, path, file_date = load_task_notes("daily")
+
+            # Should load the second file since first file's timestamp has analysis
+            assert content == "Older notes from text file"
+            assert file_date == datetime(2025, 12, 27, 9, 0, 0)
+
+    def test_checks_analysis_by_timestamp_not_full_filename_gdrive(self):
+        """Should check for analysis using timestamp, not full filename with page identifier."""
+        mock_client = MagicMock()
+        mock_client.list_notes_files.return_value = [
+            {"id": "file1", "name": "20251228_100000_Page_1.png", "mimeType": "image/png"},
+        ]
+        mock_client.file_exists.return_value = False
+        mock_client.download_file.return_value = bytes([
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+            0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
+            0xDE, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E,
+            0x44, 0xAE, 0x42, 0x60, 0x82
+        ])
+
+        with patch("tasker.files.get_active_source", return_value="gdrive"), \
+             patch("tasker.gdrive.GoogleDriveClient", return_value=mock_client), \
+             patch("tasker.files.extract_text_from_image") as mock_extract:
+            mock_extract.return_value = "Extracted text"
+
+            from tasker.files import load_task_notes
+            load_task_notes("daily")
+
+            # Verify file_exists was called with timestamp-based analysis filename
+            mock_client.file_exists.assert_called_with(
+                "daily", "20251228_100000.daily_analysis.txt"
+            )
+
 
 class TestCollectWeeklyAnalysesUsb:
     """Tests for collecting weekly analyses from USB."""
@@ -250,6 +331,39 @@ class TestSaveAnalysis:
             mock_client.upload_file.assert_called_once()
             assert "gdrive:" in str(output_path)
 
+    def test_saves_analysis_with_page_identifier_usb(self, mock_usb_dir):
+        """Should save analysis using timestamp only, not page identifier, for USB."""
+        daily_dir = mock_usb_dir / "daily"
+        page_file = daily_dir / "20251228_100000_Page_1.png"
+        page_file.write_bytes(b"fake png data")
+
+        from tasker.files import save_analysis
+
+        with patch("tasker.files.USB_DIR", str(mock_usb_dir)):
+            output_path = save_analysis("Analysis content", page_file, "daily")
+
+            # Should use timestamp without page identifier
+            assert output_path.name == "20251228_100000.daily_analysis.txt"
+            assert "_Page_" not in output_path.name
+
+    def test_saves_analysis_with_page_identifier_gdrive(self):
+        """Should save analysis using timestamp only, not page identifier, for GDrive."""
+        mock_client = MagicMock()
+
+        with patch("tasker.gdrive.GoogleDriveClient", return_value=mock_client):
+            from tasker.files import _save_analysis_gdrive
+
+            virtual_path = Path("gdrive://daily/20251228_100000_Page_1.png")
+            analysis_content = "Analysis content"
+
+            output_path = _save_analysis_gdrive(analysis_content, virtual_path, "daily")
+
+            # Verify upload was called with timestamp-based filename
+            call_args = mock_client.upload_file.call_args
+            uploaded_filename = call_args[0][1]  # Second positional arg is filename
+            assert uploaded_filename == "20251228_100000.daily_analysis.txt"
+            assert "_Page_" not in uploaded_filename
+
     def test_formats_output_with_header(self, mock_usb_dir, sample_notes_file):
         """Should format output with proper header."""
         from tasker.files import save_analysis
@@ -311,3 +425,150 @@ class TestFileExtensionConstants:
 
         assert TEXT_EXTENSIONS.issubset(ALL_EXTENSIONS)
         assert IMAGE_EXTENSIONS.issubset(ALL_EXTENSIONS)
+
+
+class TestExtractTimestamp:
+    """Tests for _extract_timestamp helper function."""
+
+    def test_extracts_from_simple_filename(self):
+        """Should extract timestamp from simple filename."""
+        from tasker.files import _extract_timestamp
+
+        result = _extract_timestamp("20251225_073454.txt")
+        assert result == "20251225_073454"
+
+    def test_extracts_from_png_filename(self):
+        """Should extract timestamp from PNG filename."""
+        from tasker.files import _extract_timestamp
+
+        result = _extract_timestamp("20251225_073454.png")
+        assert result == "20251225_073454"
+
+    def test_extracts_from_page_identifier_filename(self):
+        """Should extract timestamp from filename with page identifier."""
+        from tasker.files import _extract_timestamp
+
+        result = _extract_timestamp("20251225_073454_Page_1.png")
+        assert result == "20251225_073454"
+
+    def test_extracts_from_multi_digit_page(self):
+        """Should extract timestamp from filename with multi-digit page number."""
+        from tasker.files import _extract_timestamp
+
+        result = _extract_timestamp("20251225_073454_Page_12.png")
+        assert result == "20251225_073454"
+
+    def test_returns_none_for_invalid_filename(self):
+        """Should return None for invalid filename."""
+        from tasker.files import _extract_timestamp
+
+        result = _extract_timestamp("invalid_filename.txt")
+        assert result is None
+
+    def test_returns_none_for_analysis_filename(self):
+        """Should return None for analysis filename without proper timestamp."""
+        from tasker.files import _extract_timestamp
+
+        # Analysis filenames have the format timestamp.daily_analysis.txt
+        # The stem is "timestamp.daily_analysis" which should still extract properly
+        result = _extract_timestamp("20251225_073454.daily_analysis.txt")
+        # The stem is "20251225_073454.daily_analysis" which has a dot
+        # After splitting, we'd check "20251225_073454.daily_analysis"
+        # But our function only looks at stem, not handling dots in stem
+        # Since stem="20251225_073454.daily_analysis" is not 15 chars, returns None
+        assert result is None
+
+
+class TestParseFilenameDateTime:
+    """Tests for _parse_filename_datetime helper function."""
+
+    def test_parses_simple_filename(self):
+        """Should parse datetime from simple filename."""
+        from tasker.files import _parse_filename_datetime
+
+        result = _parse_filename_datetime("20251225_073454.txt")
+        assert result == datetime(2025, 12, 25, 7, 34, 54)
+
+    def test_parses_png_filename(self):
+        """Should parse datetime from PNG filename."""
+        from tasker.files import _parse_filename_datetime
+
+        result = _parse_filename_datetime("20251231_143000.png")
+        assert result == datetime(2025, 12, 31, 14, 30, 0)
+
+    def test_parses_page_identifier_filename(self):
+        """Should parse datetime from filename with page identifier."""
+        from tasker.files import _parse_filename_datetime
+
+        result = _parse_filename_datetime("20251225_073454_Page_1.png")
+        assert result == datetime(2025, 12, 25, 7, 34, 54)
+
+    def test_parses_multi_digit_page(self):
+        """Should parse datetime from filename with multi-digit page number."""
+        from tasker.files import _parse_filename_datetime
+
+        result = _parse_filename_datetime("20251225_073454_Page_15.png")
+        assert result == datetime(2025, 12, 25, 7, 34, 54)
+
+    def test_returns_none_for_invalid_filename(self):
+        """Should return None for invalid filename."""
+        from tasker.files import _parse_filename_datetime
+
+        result = _parse_filename_datetime("not_a_timestamp.txt")
+        assert result is None
+
+    def test_returns_none_for_invalid_date(self):
+        """Should return None for invalid date values."""
+        from tasker.files import _parse_filename_datetime
+
+        # Month 13 is invalid
+        result = _parse_filename_datetime("20251325_073454.txt")
+        assert result is None
+
+
+class TestLoadTaskNotesWithPageIdentifiers:
+    """Tests for loading task notes with page identifier filenames."""
+
+    def test_loads_page_identifier_file(self, mock_usb_dir):
+        """Should load PNG file with page identifier in filename."""
+        daily_dir = mock_usb_dir / "daily"
+        page_file = daily_dir / "20251228_100000_Page_1.png"
+        page_file.write_bytes(b"fake png data")
+
+        with patch("tasker.files.USB_DIR", str(mock_usb_dir)), \
+             patch("tasker.files.get_active_source", return_value="usb"), \
+             patch("tasker.files.extract_text_from_image") as mock_extract:
+            mock_extract.return_value = "Extracted text from page"
+
+            from tasker.files import load_task_notes
+
+            content, path, file_date = load_task_notes("daily")
+
+            assert content == "Extracted text from page"
+            assert file_date == datetime(2025, 12, 28, 10, 0, 0)
+
+    def test_skips_page_file_with_existing_timestamp_analysis(self, mock_usb_dir):
+        """Should skip page file when analysis exists for that timestamp."""
+        daily_dir = mock_usb_dir / "daily"
+
+        # Create page file
+        page_file = daily_dir / "20251228_100000_Page_1.png"
+        page_file.write_bytes(b"fake png data")
+
+        # Create analysis file using timestamp (not including page identifier)
+        analysis_file = daily_dir / "20251228_100000.daily_analysis.txt"
+        analysis_file.write_text("Existing analysis")
+
+        # Create an older file without analysis
+        older_file = daily_dir / "20251227_090000.txt"
+        older_file.write_text("Older notes")
+
+        with patch("tasker.files.USB_DIR", str(mock_usb_dir)), \
+             patch("tasker.files.get_active_source", return_value="usb"):
+            from tasker.files import load_task_notes
+
+            content, path, file_date = load_task_notes("daily")
+
+            # Should load the older file since the page file's timestamp has analysis
+            assert "Older notes" in content
+            assert file_date == datetime(2025, 12, 27, 9, 0, 0)

@@ -19,6 +19,59 @@ TEXT_EXTENSIONS = {".txt"}
 ALL_EXTENSIONS = TEXT_EXTENSIONS | IMAGE_EXTENSIONS
 
 
+def _extract_timestamp(filename: str) -> str | None:
+    """Extract timestamp portion from a notes filename.
+
+    Handles filenames with optional page identifiers.
+
+    Supported formats:
+        - YYYYMMDD_HHMMSS.ext (e.g., 20251225_073454.txt)
+        - YYYYMMDD_HHMMSS_Page_N.ext (e.g., 20251225_073454_Page_1.png)
+
+    Args:
+        filename: Filename with timestamp prefix
+
+    Returns:
+        Timestamp string (YYYYMMDD_HHMMSS) or None if not found
+    """
+    stem = Path(filename).stem
+
+    # Handle page identifiers (e.g., 20251225_073454_Page_1)
+    if "_Page_" in stem:
+        stem = stem.split("_Page_")[0]
+
+    # Validate it looks like a timestamp (15 chars: YYYYMMDD_HHMMSS)
+    if len(stem) == 15 and stem[8] == "_":
+        return stem
+
+    return None
+
+
+def _parse_filename_datetime(filename: str) -> datetime | None:
+    """Parse datetime from a notes filename.
+
+    Handles filenames with optional page identifiers.
+
+    Supported formats:
+        - YYYYMMDD_HHMMSS.ext (e.g., 20251225_073454.txt)
+        - YYYYMMDD_HHMMSS_Page_N.ext (e.g., 20251225_073454_Page_1.png)
+
+    Args:
+        filename: Filename with timestamp prefix
+
+    Returns:
+        Parsed datetime, or None if parsing fails
+    """
+    timestamp = _extract_timestamp(filename)
+    if not timestamp:
+        return None
+
+    try:
+        return datetime.strptime(timestamp, "%Y%m%d_%H%M%S")
+    except ValueError:
+        return None
+
+
 # =============================================================================
 # USB/Local Directory Functions
 # =============================================================================
@@ -55,14 +108,21 @@ def _load_task_notes_usb(notes_type: str = "daily") -> tuple[str, Path, datetime
         if "_analysis" in notes_path.name:
             continue
 
+        # Extract timestamp from filename (handles page identifiers)
+        timestamp = _extract_timestamp(notes_path.name)
+        if not timestamp:
+            continue
+
         # Check if this file already has an associated analysis file
-        analysis_filename = f"{notes_path.stem}.{notes_type}_analysis.txt"
+        # Use timestamp only so all pages of a multi-page note share one analysis
+        analysis_filename = f"{timestamp}.{notes_type}_analysis.txt"
         analysis_path = notes_dir / analysis_filename
 
         if not analysis_path.exists():
-            # Parse datetime from filename (format: YYYYMMDD_HHMMSS.ext)
-            date_str = notes_path.stem
-            file_date = datetime.strptime(date_str, "%Y%m%d_%H%M%S")
+            # Parse datetime from the extracted timestamp
+            file_date = _parse_filename_datetime(notes_path.name)
+            if not file_date:
+                continue
 
             # Extract text based on file type
             if notes_path.suffix.lower() in IMAGE_EXTENSIONS:
@@ -147,7 +207,13 @@ def _save_analysis_usb(analysis: str, input_path: Path, notes_type: str = "daily
     Returns:
         Path to the saved analysis file
     """
-    output_filename = f"{input_path.stem}.{notes_type}_analysis.txt"
+    # Extract timestamp from filename (handles page identifiers)
+    timestamp = _extract_timestamp(input_path.name)
+    if timestamp:
+        output_filename = f"{timestamp}.{notes_type}_analysis.txt"
+    else:
+        # Fallback to full stem if timestamp extraction fails
+        output_filename = f"{input_path.stem}.{notes_type}_analysis.txt"
     output_path = input_path.parent / output_filename
 
     header = f"{notes_type.capitalize()} Task Analysis"
@@ -175,6 +241,7 @@ def _load_task_notes_gdrive(notes_type: str = "daily") -> tuple[str, Path, datet
         IMAGE_MIME_TYPES,
         parse_filename_datetime,
         get_file_extension,
+        extract_timestamp_from_filename,
     )
 
     client = GoogleDriveClient()
@@ -195,10 +262,15 @@ def _load_task_notes_gdrive(notes_type: str = "daily") -> tuple[str, Path, datet
             continue
 
         # Check if analysis already exists
-        stem = Path(filename).stem
-        if "." in stem:
-            stem = stem.split(".")[0]
-        analysis_filename = f"{stem}.{notes_type}_analysis.txt"
+        # Use timestamp only so all pages of a multi-page note share one analysis
+        timestamp = extract_timestamp_from_filename(filename)
+        if timestamp:
+            analysis_filename = f"{timestamp}.{notes_type}_analysis.txt"
+        else:
+            stem = Path(filename).stem
+            if "." in stem:
+                stem = stem.split(".")[0]
+            analysis_filename = f"{stem}.{notes_type}_analysis.txt"
 
         if client.file_exists(notes_type, analysis_filename):
             continue
@@ -297,15 +369,22 @@ def _save_analysis_gdrive(analysis: str, input_path: Path, notes_type: str = "da
     Returns:
         Virtual path to the saved analysis file
     """
-    from .gdrive import GoogleDriveClient
+    from .gdrive import GoogleDriveClient, extract_timestamp_from_filename
 
     client = GoogleDriveClient()
 
     # Extract filename from virtual path
     filename = input_path.name
-    stem = Path(filename).stem
-    if "." in stem and "_analysis" not in stem:
-        stem = stem.split(".")[0]
+
+    # Extract timestamp (handles page identifiers)
+    timestamp = extract_timestamp_from_filename(filename)
+    if timestamp:
+        stem = timestamp
+    else:
+        # Fallback: extract stem and handle special cases
+        stem = Path(filename).stem
+        if "." in stem and "_analysis" not in stem:
+            stem = stem.split(".")[0]
 
     output_filename = f"{stem}.{notes_type}_analysis.txt"
 
