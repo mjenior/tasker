@@ -48,12 +48,24 @@ pip install -e .
 
 ## Configuration
 
-### API Key
+### Environment Variables
 
-Set your Anthropic API key as an environment variable:
+Copy the `.env.template` file to `.env` and configure your settings:
 
 ```bash
-export ANTHROPIC_API_KEY="your-api-key-here"
+cp .env.template .env
+```
+
+Edit `.env` with your values:
+
+```bash
+# Anthropic API Key (required)
+# Get your API key from: https://console.anthropic.com/
+ANTHROPIC_API_KEY=your-api-key-here
+
+# Notes directory path (required)
+# Path to the mounted note-taking device directory containing daily/ and weekly/ subdirectories
+NOTES_DIR=/path/to/your/notes/directory
 ```
 
 ### Model Configuration
@@ -69,7 +81,7 @@ top_p: 1.0
 
 ### Notes Directory
 
-Tasker reads notes from a mounted note-taking device. By default, it looks for notes in `/media/matt-jenior/MJENIOR/Notes` (configurable in `analyze_tasks.py`). Ensure your device is connected and mounted before running analysis.
+Tasker reads notes from a mounted note-taking device at the path specified by `NOTES_DIR` in your `.env` file. Ensure your device is connected and mounted before running analysis.
 
 The expected directory structure is:
 
@@ -102,7 +114,9 @@ Analyze the most recent unanalyzed daily notes file:
 
 ```bash
 analyze-tasks --type daily
-# or with alias
+# or using the tasker command
+tasker --type daily
+# or with shell alias
 daily
 ```
 
@@ -117,7 +131,9 @@ Generate a weekly review from the previous week's daily analyses:
 
 ```bash
 analyze-tasks --type weekly
-# or with alias
+# or using the tasker command
+tasker --type weekly
+# or with shell alias
 weekly
 ```
 
@@ -167,14 +183,30 @@ task clean:all      # Remove all generated files including venv
 
 ```
 tasker/
-├── analyze_tasks.py   # Main CLI application
+├── .env.template      # Environment variables template
 ├── config.yaml        # Claude model configuration
 ├── pyproject.toml     # Project dependencies and metadata
 ├── Taskfile.yml       # Task runner configuration
-├── prompts/
-│   ├── daily.txt      # System prompt for daily analysis
-│   └── weekly.txt     # System prompt for weekly analysis
-└── README.md
+├── README.md
+└── tasker/            # Python package
+    ├── __init__.py    # Package exports
+    ├── tasker.py      # Main CLI application
+    └── prompts.py     # LangChain prompt templates
+```
+
+## Programmatic Usage
+
+The package can also be used as a library:
+
+```python
+from tasker import analyze_tasks, get_daily_prompt, get_weekly_prompt
+
+# Get prompt templates with dynamic variables
+daily_prompt = get_daily_prompt()
+print(daily_prompt.input_variables)  # ['current_date', 'task_notes']
+
+weekly_prompt = get_weekly_prompt()
+print(weekly_prompt.input_variables)  # ['week_start', 'week_end', 'task_notes']
 ```
 
 ## License
