@@ -9,24 +9,26 @@ an actionable execution plan based on GTD principles.
 import argparse
 import sys
 import os
+import base64
 from datetime import datetime, timedelta
 from pathlib import Path
 
 import yaml
 from dotenv import load_dotenv
 from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import HumanMessage
 
-from .prompts import get_daily_prompt, get_weekly_prompt
+from .prompts import get_daily_prompt, get_weekly_prompt, IMAGE_EXTRACTION_PROMPT
 
 # Load environment variables from .env file (looks in repo root)
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 # Notes directory from environment variable
-NOTES_DIR = os.getenv("NOTES_DIR")
-if not NOTES_DIR:
+USB_DIR = os.getenv("USB_DIR")
+if not USB_DIR:
     raise ValueError(
-        "NOTES_DIR environment variable is not set. "
-        "Please create a .env file from .env.template and set NOTES_DIR."
+        "USB_DIR environment variable is not set. "
+        "Please create a .env file from .env.template and set USB_DIR."
     )
 
 # Path to model configuration file (at repository root, parent of package)
@@ -58,8 +60,62 @@ def load_model_config() -> dict:
     return config or {}
 
 
+def extract_text_from_image(image_path: Path, api_key: str | None = None) -> str:
+    """Extract text from a PNG image of handwritten notes using Claude's vision API.
+
+    Args:
+        image_path: Path to the PNG image file
+        api_key: Optional Anthropic API key (uses ANTHROPIC_API_KEY env var if not provided)
+
+    Returns:
+        Extracted text content from the image
+    """
+    config = load_model_config()
+
+    # Extract model from config or use default
+    model = config.pop("model", "claude-haiku-4-5-20241022")
+
+    # Build ChatAnthropic with config parameters
+    llm = ChatAnthropic(
+        model=model,
+        api_key=fetch_api_key(api_key),
+        **config
+    )
+
+    # Read and encode the image
+    image_data = base64.standard_b64encode(image_path.read_bytes()).decode("utf-8")
+
+    # Determine media type based on file extension
+    suffix = image_path.suffix.lower()
+    media_type_map = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+    }
+    media_type = media_type_map.get(suffix, "image/png")
+
+    # Create message with image content
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": IMAGE_EXTRACTION_PROMPT},
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:{media_type};base64,{image_data}"},
+            },
+        ]
+    )
+
+    response = llm.invoke([message])
+    return response.content
+
+
 def load_task_notes(notes_type: str = "daily") -> tuple[str, Path, datetime]:
     """Load the most recent task notes file that hasn't been analyzed yet.
+
+    Supports both .txt files (read directly) and image files (.png, .jpg, .jpeg,
+    .gif, .webp) which are processed through Claude's vision API to extract text.
 
     Args:
         notes_type: Type of notes to load (e.g., "daily", "weekly")
@@ -67,12 +123,12 @@ def load_task_notes(notes_type: str = "daily") -> tuple[str, Path, datetime]:
     Returns:
         Tuple of (file contents, path to the notes file, parsed datetime from filename)
     """
-    base_dir = Path(NOTES_DIR)
+    base_dir = Path(USB_DIR)
 
     # Check if flash drive is mounted
     if not base_dir.exists():
         raise FileNotFoundError(
-            f"Flash drive not mounted. Expected notes directory at: {NOTES_DIR}"
+            f"Flash drive not mounted. Expected notes directory at: {USB_DIR}"
         )
 
     notes_dir = base_dir / notes_type
@@ -80,24 +136,41 @@ def load_task_notes(notes_type: str = "daily") -> tuple[str, Path, datetime]:
     if not notes_dir.exists():
         raise FileNotFoundError(f"Notes directory not found: {notes_dir}")
 
-    # Find most recent file without an associated analysis file
-    # Files are named with timestamp prefix: YYYYMMDD_HHMMSS.txt
-    txt_files = sorted(notes_dir.glob("*.txt"), reverse=True)
+    # Supported file extensions
+    text_extensions = {".txt"}
+    image_extensions = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+    all_extensions = text_extensions | image_extensions
 
-    for notes_path in txt_files:
+    # Find all supported files and sort by modification time (newest first)
+    all_files = []
+    for ext in all_extensions:
+        all_files.extend(notes_dir.glob(f"*{ext}"))
+    all_files = sorted(all_files, reverse=True)
+
+    for notes_path in all_files:
         # Skip files that are already analysis files
         if "_analysis" in notes_path.name:
             continue
 
         # Check if this file already has an associated analysis file
-        analysis_filename = f"{notes_path.stem}.{notes_type}_analysis{notes_path.suffix}"
+        # Analysis files are always .txt regardless of input format
+        analysis_filename = f"{notes_path.stem}.{notes_type}_analysis.txt"
         analysis_path = notes_dir / analysis_filename
 
         if not analysis_path.exists():
-            # Parse datetime from filename (format: YYYYMMDD_HHMMSS.txt)
+            # Parse datetime from filename (format: YYYYMMDD_HHMMSS.ext)
             date_str = notes_path.stem
             file_date = datetime.strptime(date_str, "%Y%m%d_%H%M%S")
-            return notes_path.read_text(), notes_path, file_date
+
+            # Extract text based on file type
+            if notes_path.suffix.lower() in image_extensions:
+                # Use vision API to extract text from image
+                file_contents = extract_text_from_image(notes_path)
+            else:
+                # Read text file directly
+                file_contents = notes_path.read_text()
+
+            return file_contents, notes_path, file_date
 
     raise FileNotFoundError(
         f"No unanalyzed notes files found in: {notes_dir}"
@@ -111,12 +184,12 @@ def collect_weekly_analyses() -> tuple[str, Path, datetime, datetime]:
         Tuple of (combined analysis text, output path for weekly analysis,
                   week start datetime, week end datetime)
     """
-    base_dir = Path(NOTES_DIR)
+    base_dir = Path(USB_DIR)
 
     # Check if flash drive is mounted
     if not base_dir.exists():
         raise FileNotFoundError(
-            f"Flash drive not mounted. Expected notes directory at: {NOTES_DIR}"
+            f"Flash drive not mounted. Expected notes directory at: {USB_DIR}"
         )
 
     daily_dir = base_dir / "daily"
@@ -230,8 +303,9 @@ def save_analysis(analysis: str, input_path: Path, notes_type: str = "daily") ->
     Returns:
         Path to the saved analysis file
     """
-    # Create output filename: {stem}.{type}_analysis{suffix}
-    output_filename = f"{input_path.stem}.{notes_type}_analysis{input_path.suffix}"
+    # Create output filename: {stem}.{type}_analysis.txt
+    # Always use .txt extension regardless of input format
+    output_filename = f"{input_path.stem}.{notes_type}_analysis.txt"
     output_path = input_path.parent / output_filename
 
     # Format the output
@@ -268,6 +342,11 @@ def main():
             }
         else:
             task_notes, notes_path, file_date = load_task_notes(args.type)
+
+            # Indicate if text was extracted from an image
+            image_extensions = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+            if notes_path.suffix.lower() in image_extensions:
+                print(f"Extracted text from image: {notes_path.name}")
             print(f"Analyzing daily tasks: {notes_path.name}\n")
 
             # Format date for the prompt

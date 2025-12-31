@@ -12,6 +12,7 @@ from .prompts import (
     DAILY_HUMAN_PROMPT,
     WEEKLY_SYSTEM_PROMPT,
     WEEKLY_HUMAN_PROMPT,
+    IMAGE_EXTRACTION_PROMPT,
 )
 from .tasker import (
     main,
@@ -19,6 +20,7 @@ from .tasker import (
     load_task_notes,
     collect_weekly_analyses,
     save_analysis,
+    extract_text_from_image,
 )
 
 __version__ = "0.1.0"
@@ -31,6 +33,7 @@ __all__ = [
     "load_task_notes",
     "collect_weekly_analyses",
     "save_analysis",
+    "extract_text_from_image",
     # Prompt templates
     "get_daily_prompt",
     "get_weekly_prompt",
@@ -38,4 +41,5 @@ __all__ = [
     "DAILY_HUMAN_PROMPT",
     "WEEKLY_SYSTEM_PROMPT",
     "WEEKLY_HUMAN_PROMPT",
+    "IMAGE_EXTRACTION_PROMPT",
 ]

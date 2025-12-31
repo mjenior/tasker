@@ -70,7 +70,7 @@ ANTHROPIC_API_KEY=your-api-key-here
 
 # Notes directory path (required)
 # Path to the mounted note-taking device directory containing daily/ and weekly/ subdirectories
-NOTES_DIR=/path/to/your/notes/directory
+USB_DIR=/path/to/your/notes/directory
 ```
 
 ### Model Configuration
@@ -86,7 +86,7 @@ top_p: 1.0
 
 ### Notes Directory
 
-Tasker reads notes from a mounted note-taking device at the path specified by `NOTES_DIR` in your `.env` file. Ensure your device is connected and mounted before running analysis.
+Tasker reads notes from a mounted note-taking device at the path specified by `USB_DIR` in your `.env` file. Ensure your device is connected and mounted before running analysis.
 
 The expected directory structure is:
 

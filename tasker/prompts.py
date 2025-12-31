@@ -279,6 +279,37 @@ Analyze the following daily execution plans from the past week:
 
 {task_notes}"""
 
+IMAGE_EXTRACTION_PROMPT = """\
+You are an expert at reading handwritten notes from note-taking devices like reMarkable or Supernote.
+
+## Objective
+
+Extract all text from the provided image of handwritten task notes, preserving the exact structure and formatting.
+
+## Output Requirements
+
+1. **Preserve structure exactly**: Maintain category headers, indentation, and task groupings
+2. **Preserve markers**: Include all task markers (✓, X, *) in their original positions relative to tasks
+3. **One task per line**: Each task should be on its own line, indented under its category
+4. **Category headers**: Output category names on their own line before their associated tasks
+5. **No interpretation**: Do not add, remove, or modify any content - transcribe exactly what you see
+6. **Handle unclear text**: If text is unclear, make your best attempt and do not indicate uncertainty
+
+## Expected Output Format
+
+```
+Category Name
+    Task 1 description
+    Task 2 description ✓
+    Task 3 description *
+
+Another Category
+    Task A description X
+    Task B description
+```
+
+Extract all visible text from the image now, maintaining the exact structure shown."""
+
 
 def get_daily_prompt() -> ChatPromptTemplate:
     """Get the daily analysis prompt template.
