@@ -18,7 +18,7 @@ class TestLoadTaskNotesUsb:
              patch("tasktriage.files.get_active_source", return_value="usb"):
             from tasktriage.files import load_task_notes
 
-            content, path, file_date = load_task_notes("daily")
+            content, path, file_date = load_task_notes("daily", "txt")
 
             assert "Review Q4 budget proposal" in content
             assert path == sample_notes_file
@@ -33,7 +33,7 @@ class TestLoadTaskNotesUsb:
 
             from tasktriage.files import load_task_notes
 
-            content, path, file_date = load_task_notes("daily")
+            content, path, file_date = load_task_notes("daily", "png")
 
             assert content == "Extracted task notes"
             mock_extract.assert_called_once_with(sample_image_file)
@@ -49,7 +49,7 @@ class TestLoadTaskNotesUsb:
              patch("tasktriage.files.get_active_source", return_value="usb"):
             from tasktriage.files import load_task_notes
 
-            content, path, file_date = load_task_notes("daily")
+            content, path, file_date = load_task_notes("daily", "txt")
 
             # Should load the notes file, not the analysis file
             assert "Some tasks" in content
@@ -73,7 +73,7 @@ class TestLoadTaskNotesUsb:
              patch("tasktriage.files.get_active_source", return_value="usb"):
             from tasktriage.files import load_task_notes
 
-            content, path, file_date = load_task_notes("daily")
+            content, path, file_date = load_task_notes("daily", "txt")
 
             # Should load the file without analysis (even though it's older by name)
             assert "Newer tasks" in content
@@ -114,11 +114,13 @@ class TestLoadTaskNotesGdrive:
         mock_client.file_exists.return_value = False
         mock_client.download_file_text.return_value = "GDrive task content"
 
-        with patch("tasktriage.files.get_active_source", return_value="gdrive"), \
+        # Mock LOCAL_OUTPUT_DIR in config module
+        with patch("tasktriage.config.LOCAL_OUTPUT_DIR", None), \
+             patch("tasktriage.files.get_active_source", return_value="gdrive"), \
              patch("tasktriage.gdrive.GoogleDriveClient", return_value=mock_client):
             from tasktriage.files import load_task_notes
 
-            content, path, file_date = load_task_notes("daily")
+            content, path, file_date = load_task_notes("daily", "txt")
 
             assert content == "GDrive task content"
             assert "gdrive:" in str(path)  # Path normalizes gdrive:// to gdrive:/
@@ -148,7 +150,7 @@ class TestLoadTaskNotesGdrive:
 
             from tasktriage.files import load_task_notes
 
-            content, path, file_date = load_task_notes("daily")
+            content, path, file_date = load_task_notes("daily", "png")
 
             assert content == "Extracted from GDrive image"
 
@@ -175,7 +177,7 @@ class TestLoadTaskNotesGdrive:
 
             from tasktriage.files import load_task_notes
 
-            content, path, file_date = load_task_notes("daily")
+            content, path, file_date = load_task_notes("daily", "png")
 
             assert content == "Extracted from page 1"
             assert file_date == datetime(2025, 12, 25, 7, 34, 54)
@@ -198,7 +200,7 @@ class TestLoadTaskNotesGdrive:
              patch("tasktriage.gdrive.GoogleDriveClient", return_value=mock_client):
             from tasktriage.files import load_task_notes
 
-            content, path, file_date = load_task_notes("daily")
+            content, path, file_date = load_task_notes("daily", "txt")
 
             # Should load the second file since first file's timestamp has analysis
             assert content == "Older notes from text file"
@@ -220,13 +222,15 @@ class TestLoadTaskNotesGdrive:
             0x44, 0xAE, 0x42, 0x60, 0x82
         ])
 
-        with patch("tasktriage.files.get_active_source", return_value="gdrive"), \
+        # Mock LOCAL_OUTPUT_DIR in config module
+        with patch("tasktriage.config.LOCAL_OUTPUT_DIR", None), \
+             patch("tasktriage.files.get_active_source", return_value="gdrive"), \
              patch("tasktriage.gdrive.GoogleDriveClient", return_value=mock_client), \
              patch("tasktriage.files.extract_text_from_image") as mock_extract:
             mock_extract.return_value = "Extracted text"
 
             from tasktriage.files import load_task_notes
-            load_task_notes("daily")
+            load_task_notes("daily", "png")
 
             # Verify file_exists was called with timestamp-based analysis filename
             mock_client.file_exists.assert_called_with(
@@ -319,7 +323,9 @@ class TestSaveAnalysis:
         """Should upload analysis to Google Drive for gdrive:// paths."""
         mock_client = MagicMock()
 
-        with patch("tasktriage.gdrive.GoogleDriveClient", return_value=mock_client):
+        # Mock LOCAL_OUTPUT_DIR in config module, not files module
+        with patch("tasktriage.config.LOCAL_OUTPUT_DIR", None), \
+             patch("tasktriage.gdrive.GoogleDriveClient", return_value=mock_client):
             from tasktriage.files import _save_analysis_gdrive
 
             # Test the gdrive function directly since Path normalizes gdrive://
@@ -335,7 +341,9 @@ class TestSaveAnalysis:
         """Should route to gdrive save when path is normalized (gdrive:/ not gdrive://)."""
         mock_client = MagicMock()
 
-        with patch("tasktriage.gdrive.GoogleDriveClient", return_value=mock_client):
+        # Mock LOCAL_OUTPUT_DIR in config module, not files module
+        with patch("tasktriage.config.LOCAL_OUTPUT_DIR", None), \
+             patch("tasktriage.gdrive.GoogleDriveClient", return_value=mock_client):
             from tasktriage.files import save_analysis
 
             # Path normalizes gdrive:// to gdrive:/ - this should still route to gdrive
@@ -369,7 +377,9 @@ class TestSaveAnalysis:
         """Should save analysis using timestamp only, not page identifier, for GDrive."""
         mock_client = MagicMock()
 
-        with patch("tasktriage.gdrive.GoogleDriveClient", return_value=mock_client):
+        # Mock LOCAL_OUTPUT_DIR in config module, not files module
+        with patch("tasktriage.config.LOCAL_OUTPUT_DIR", None), \
+             patch("tasktriage.gdrive.GoogleDriveClient", return_value=mock_client):
             from tasktriage.files import _save_analysis_gdrive
 
             virtual_path = Path("gdrive://daily/20251228_100000_Page_1.png")
@@ -498,6 +508,44 @@ class TestExtractTimestamp:
         assert result is None
 
 
+class TestExampleFiles:
+    """Tests using example files from tests/examples directory."""
+
+    def test_example_text_file_exists(self, example_text_file):
+        """Example text file should exist."""
+        assert example_text_file.exists()
+        assert example_text_file.suffix == ".txt"
+
+    def test_example_image_file_exists(self, example_image_file):
+        """Example image file should exist."""
+        assert example_image_file.exists()
+        assert example_image_file.suffix == ".png"
+
+    def test_example_text_file_parses_correctly(self, example_text_file):
+        """Example text file should parse with correct datetime."""
+        from tasktriage.files import _parse_filename_datetime
+
+        result = _parse_filename_datetime(example_text_file.name)
+        assert result == datetime(2025, 12, 25, 7, 43, 53)
+
+    def test_example_image_file_parses_correctly(self, example_image_file):
+        """Example image file with page identifier should parse correctly."""
+        from tasktriage.files import _parse_filename_datetime
+
+        result = _parse_filename_datetime(example_image_file.name)
+        assert result == datetime(2025, 12, 25, 7, 43, 53)
+
+    def test_example_files_have_matching_timestamps(self, example_text_file, example_image_file):
+        """Example text and image files should have matching timestamps."""
+        from tasktriage.files import _extract_timestamp
+
+        text_timestamp = _extract_timestamp(example_text_file.name)
+        image_timestamp = _extract_timestamp(example_image_file.name)
+
+        assert text_timestamp == image_timestamp
+        assert text_timestamp == "20251225_074353"
+
+
 class TestParseFilenameDateTime:
     """Tests for _parse_filename_datetime helper function."""
 
@@ -561,7 +609,7 @@ class TestLoadTaskNotesWithPageIdentifiers:
 
             from tasktriage.files import load_task_notes
 
-            content, path, file_date = load_task_notes("daily")
+            content, path, file_date = load_task_notes("daily", "png")
 
             assert content == "Extracted text from page"
             assert file_date == datetime(2025, 12, 28, 10, 0, 0)
@@ -586,7 +634,7 @@ class TestLoadTaskNotesWithPageIdentifiers:
              patch("tasktriage.files.get_active_source", return_value="usb"):
             from tasktriage.files import load_task_notes
 
-            content, path, file_date = load_task_notes("daily")
+            content, path, file_date = load_task_notes("daily", "txt")
 
             # Should load the older file since the page file's timestamp has analysis
             assert "Older notes" in content

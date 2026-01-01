@@ -22,8 +22,15 @@ def main():
         "--type",
         type=str,
         default="daily",
+        choices=["daily","weekly"],
         help="Analysis type: daily or weekly (default: daily)"
     )
+    parser.add_argument(
+        "--files",
+        default="png",
+        choices=["png","txt"],
+        help="File type preference: png or txt (default: png)"
+        )
 
     args = parser.parse_args()
 
@@ -44,7 +51,7 @@ def main():
                 "week_end": week_end.strftime("%A, %B %d, %Y"),
             }
         else:
-            task_notes, notes_path, file_date = load_task_notes(args.type)
+            task_notes, notes_path, file_date = load_task_notes(args.type, args.files)
 
             # Indicate if text was extracted from an image
             if notes_path.suffix.lower() in IMAGE_EXTENSIONS:

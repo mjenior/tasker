@@ -46,8 +46,8 @@ class TestMainFunction:
 
             main()
 
-            # Verify workflow
-            mock_dependencies["load"].assert_called_once_with("daily")
+            # Verify workflow (now includes file_preference parameter)
+            mock_dependencies["load"].assert_called_once_with("daily", "png")
             mock_dependencies["analyze"].assert_called_once()
             mock_dependencies["save"].assert_called_once()
 
@@ -176,7 +176,7 @@ class TestMainFunction:
 
             main()
 
-            mock_dependencies["load"].assert_called_with("daily")
+            mock_dependencies["load"].assert_called_with("daily", "png")
 
 
 class TestErrorHandling:
@@ -249,7 +249,7 @@ class TestArgumentParsing:
             from tasktriage.cli import main
 
             main()
-            mock_load.assert_called_with("daily")
+            mock_load.assert_called_with("daily", "png")
 
     def test_accepts_weekly_type(self):
         """Should accept --type weekly argument."""
@@ -279,3 +279,31 @@ class TestImageExtensionConstant:
         from tasktriage.cli import IMAGE_EXTENSIONS
 
         assert ".png" in IMAGE_EXTENSIONS
+
+
+class TestExampleFilesIntegration:
+    """Tests demonstrating use of example files from tests/examples directory."""
+
+    def test_example_text_file_content_readable(self, example_text_file):
+        """Example text file should be readable."""
+        content = example_text_file.read_text()
+        assert len(content) > 0
+        # Example file contains task categories
+        assert "agents team" in content.lower() or "admin" in content.lower()
+
+    def test_example_image_file_is_valid_png(self, example_image_file):
+        """Example image file should be a valid PNG."""
+        data = example_image_file.read_bytes()
+        # Check PNG signature
+        assert data[:8] == b'\x89PNG\r\n\x1a\n'
+
+    def test_cli_can_process_example_file_format(self, example_text_file):
+        """CLI should be able to process files with example file naming format."""
+        from tasktriage.files import _parse_filename_datetime
+
+        # Verify the example file uses the correct naming format
+        file_date = _parse_filename_datetime(example_text_file.name)
+        assert file_date is not None
+        assert file_date.year == 2025
+        assert file_date.month == 12
+        assert file_date.day == 25

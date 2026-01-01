@@ -1,0 +1,12 @@
+﻿Agents team
+    test new agent tone
+    compare Gemini version output 
+    create prompt/response test suite
+
+ Admin/Other
+    submit timesheet
+✓   request PTO
+
+Home
+✓    groceries
+✓   wrap gifts

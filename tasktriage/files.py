@@ -76,11 +76,12 @@ def _parse_filename_datetime(filename: str) -> datetime | None:
 # USB/Local Directory Functions
 # =============================================================================
 
-def _load_task_notes_usb(notes_type: str = "daily") -> tuple[str, Path, datetime]:
+def _load_task_notes_usb(notes_type: str = "daily", file_preference: str = "png") -> tuple[str, Path, datetime]:
     """Load task notes from USB/local directory.
 
     Args:
         notes_type: Type of notes to load (e.g., "daily", "weekly")
+        file_preference: File type preference ("png" or "txt")
 
     Returns:
         Tuple of (file contents, path to the notes file, parsed datetime from filename)
@@ -97,9 +98,15 @@ def _load_task_notes_usb(notes_type: str = "daily") -> tuple[str, Path, datetime
     if not notes_dir.exists():
         raise FileNotFoundError(f"Notes directory not found: {notes_dir}")
 
-    # Find all supported files and sort by name (newest first based on timestamp)
+    # Determine which extensions to search based on preference
+    if file_preference == "txt":
+        search_extensions = TEXT_EXTENSIONS
+    else:  # default to "png"
+        search_extensions = IMAGE_EXTENSIONS
+
+    # Find all files matching preference and sort by name (newest first based on timestamp)
     all_files = []
-    for ext in ALL_EXTENSIONS:
+    for ext in search_extensions:
         all_files.extend(notes_dir.glob(f"*{ext}"))
     all_files = sorted(all_files, reverse=True)
 
@@ -246,11 +253,12 @@ def _analysis_exists_locally(notes_type: str, analysis_filename: str) -> bool:
     return analysis_path.exists()
 
 
-def _load_task_notes_gdrive(notes_type: str = "daily") -> tuple[str, Path, datetime]:
+def _load_task_notes_gdrive(notes_type: str = "daily", file_preference: str = "png") -> tuple[str, Path, datetime]:
     """Load task notes from Google Drive.
 
     Args:
         notes_type: Type of notes to load (e.g., "daily", "weekly")
+        file_preference: File type preference ("png" or "txt")
 
     Returns:
         Tuple of (file contents, virtual path, parsed datetime from filename)
@@ -275,6 +283,15 @@ def _load_task_notes_gdrive(notes_type: str = "daily") -> tuple[str, Path, datet
         # Skip analysis files
         if "_analysis" in filename:
             continue
+
+        # Filter by file type preference
+        file_ext = Path(filename).suffix.lower()
+        if file_preference == "txt":
+            if file_ext not in TEXT_EXTENSIONS:
+                continue
+        else:  # default to "png"
+            if file_ext not in IMAGE_EXTENSIONS:
+                continue
 
         # Parse datetime from filename
         file_date = parse_filename_datetime(filename)
@@ -445,7 +462,7 @@ def _save_analysis_gdrive(analysis: str, input_path: Path, notes_type: str = "da
 # Public API (automatically selects source based on configuration)
 # =============================================================================
 
-def load_task_notes(notes_type: str = "daily") -> tuple[str, Path, datetime]:
+def load_task_notes(notes_type: str = "daily", file_preference: str = "png") -> tuple[str, Path, datetime]:
     """Load the most recent task notes file that hasn't been analyzed yet.
 
     Automatically selects between USB and Google Drive based on configuration.
@@ -455,6 +472,7 @@ def load_task_notes(notes_type: str = "daily") -> tuple[str, Path, datetime]:
 
     Args:
         notes_type: Type of notes to load (e.g., "daily", "weekly")
+        file_preference: File type preference - "png" or "txt" (default: "png")
 
     Returns:
         Tuple of (file contents, path to the notes file, parsed datetime from filename)
@@ -465,9 +483,9 @@ def load_task_notes(notes_type: str = "daily") -> tuple[str, Path, datetime]:
     source = get_active_source()
 
     if source == "gdrive":
-        return _load_task_notes_gdrive(notes_type)
+        return _load_task_notes_gdrive(notes_type, file_preference)
     else:
-        return _load_task_notes_usb(notes_type)
+        return _load_task_notes_usb(notes_type, file_preference)
 
 
 def collect_weekly_analyses() -> tuple[str, Path, datetime, datetime]:

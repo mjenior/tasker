@@ -268,6 +268,21 @@ How to mark up your handwritten notes:
 - **Removed/abandoned tasks**: Mark with an X
 - **Urgent tasks**: Add an asterisk (*)
 
+### Example Files
+
+Not sure what your task notes should look like? Check out the example files in the `tests/examples/` directory:
+
+- **`20251225_074353.txt`**: Example text file showing proper task formatting with categories (agents team, Admin, Home), task items, and completion markers
+- **`20251225_074353_Page_1.png`**: Example PNG image of handwritten notes demonstrating how TaskTriage processes scanned/photographed task lists
+
+These files demonstrate:
+- Correct filename format with timestamp prefix (`YYYYMMDD_HHMMSS`)
+- Task organization with category headers
+- Multi-page support (using `_Page_N` suffix for image files)
+- How TaskTriage handles both text and image inputs
+
+You can use these as templates when creating your own task note files. The example files are also used in the test suite to ensure TaskTriage correctly processes real-world note formats.
+
 ## Usage
 
 ### Daily Analysis

@@ -151,3 +151,15 @@ def mock_chat_anthropic(mock_llm_response):
 def sample_datetime():
     """Return a sample datetime for testing."""
     return datetime(2025, 12, 31, 14, 30, 0)
+
+
+@pytest.fixture
+def example_text_file():
+    """Return path to example text file."""
+    return Path(__file__).parent / "examples" / "20251225_074353.txt"
+
+
+@pytest.fixture
+def example_image_file():
+    """Return path to example image file."""
+    return Path(__file__).parent / "examples" / "20251225_074353_Page_1.png"
