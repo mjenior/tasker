@@ -6,11 +6,11 @@ You know that feeling when you write a beautiful handwritten to-do list and then
 
 ## Overview
 
-Here's the deal: you write your tasks on a note-taking device (reMarkable, Supernote, etc.). Those notes get synced to either a mounted drive or Google Drive. TaskTriage then swoops in, finds your latest scribbles, and uses Claude AI (via LangChain) to do two things:
+Here's the deal: you write your tasks on a note-taking device (reMarkable, Supernote, etc.). Those notes get synced to either a mounted drive or Google Drive. TaskTriage then swoops in, finds your latest scribbles, and uses Claude AI (via LangChain) to do three things:
 
 - **Daily Analysis**: Takes your categorized to-do list and transforms it into an actual realistic plan for a single day. You get time estimates, energy levels, and prioritized action steps. No more pretending you can do 47 things in one afternoon.
 - **Weekly Analysis**: Looks back at your week's worth of daily plans to spot patterns, figure out where things went sideways, and generate strategies to fix your planning approach. It's like a retrospective, but with less corporate speak.
-- **Monthly Analysis**: Analyzes a whole calendar month's worth of weekly reports to assess overall accomplishments, and craft new ghigh-level guidance for creating tasks for the next month.
+- **Monthly Analysis**: Synthesizes your entire month's worth of weekly analyses to identify long-term patterns, assess strategic accomplishments, and craft high-level guidance for next month's planning and execution strategy.
 
 ## Features
 
@@ -20,7 +20,9 @@ Here's the deal: you write your tasks on a note-taking device (reMarkable, Super
 - Works with local/USB directories or Google Drive (your choice)
 - Tweak Claude's model parameters via a simple YAML file
 - GTD-based prioritization with built-in workload guardrails that cap you at 6-7 hours of focused work per day (because burnout is bad, actually)
+- **Temporal hierarchy**: Daily → Weekly → Monthly, with automatic analysis triggering at each level
 - Auto-triggers weekly analyses when you have 5+ weekday analyses or when the work week has passed
+- Auto-triggers monthly analyses when you have 4+ weekly analyses or when the calendar month has ended
 - Shell alias so you can just type `triage` instead of the full command
 
 ## Requirements
@@ -45,8 +47,8 @@ nano .env  # or your preferred editor
 # Activate the virtual environment
 source .venv/bin/activate
 
-# Add shell aliases (optional but highly recommended)
-task aliases
+# Add shell alias (optional but highly recommended)
+task alias
 source ~/.bashrc  # or ~/.zshrc if you're a zsh person
 ```
 
@@ -308,16 +310,20 @@ tasktriage --files png
 
 ### What Happens When You Run It
 
-**Daily Analysis (runs automatically):**
+TaskTriage follows a strict temporal hierarchy, ensuring each level completes before the next begins:
+
+**LEVEL 1: Daily Analysis (runs automatically)**
+
 1. TaskTriage finds ALL unanalyzed `.txt` or image files in `Notes/daily/`
 2. Processes them in parallel (up to 5 concurrent API calls)
 3. For images, Claude's vision API extracts the text from your handwriting
 4. Each file gets analyzed and saved as `{filename}.daily_analysis.txt`
 5. Shows progress in real-time with success/failure indicators
+6. Prints: `Daily Summary: X successful, Y failed`
 
-**Weekly Analysis (auto-triggers when conditions are met):**
+**LEVEL 2: Weekly Analysis (auto-triggers when conditions are met)**
 
-After processing daily files, TaskTriage checks if any weeks need analysis. A weekly analysis is triggered automatically when:
+After all daily analyses complete, TaskTriage checks if any weeks need analysis. A weekly analysis is triggered automatically when:
 - **5+ weekday analyses exist** for a work week (Monday-Friday), OR
 - **The work week has passed** and at least 1 daily analysis exists for that week
 
@@ -326,8 +332,22 @@ When triggered:
 2. Combines them with date labels
 3. Generates a comprehensive weekly analysis looking at patterns and problems
 4. Saves to `Notes/weekly/{week_start}.weekly_analysis.txt`
+5. Prints: `Weekly Summary: X successful, Y failed`
 
-* A similar thing happens for monthly analyses based on the weekly reports.
+**LEVEL 3: Monthly Analysis (auto-triggers when conditions are met)**
+
+After all weekly analyses complete, TaskTriage checks if any months need analysis. A monthly analysis is triggered automatically when:
+- **4+ weekly analyses exist** for a calendar month, OR
+- **The calendar month has ended** and at least 1 weekly analysis exists for that month
+
+When triggered:
+1. Collects all weekly analysis files from the qualifying month
+2. Combines them with week-range labels
+3. Generates a comprehensive monthly analysis synthesizing strategic patterns across the entire month
+4. Saves to `Notes/monthly/{month_label}.monthly_analysis.txt`
+5. Prints: `Monthly Summary: X successful, Y failed`
+
+You don't have to trigger any of these manually—TaskTriage handles the entire hierarchy automatically!
 
 ## Daily Analysis Output
 
@@ -351,6 +371,44 @@ The weekly analysis shows you:
 - **Corrected priority model** based on your actual behavior, not your aspirational self
 - **Next-week planning strategy** with realistic capacity assumptions and guidance on how to structure your days
 
+## Monthly Analysis Output
+
+The monthly analysis synthesizes your entire month to show you:
+
+- **Monthly achievements summary**: Major accomplishments organized by category (Work, Personal, System)
+- **Strategic patterns and trends**: 3-5 month-level patterns like execution rhythms, category performance, capacity trends
+- **System evolution assessment**: Which weekly recommendations actually got implemented? Which ones worked?
+- **Persistent challenges**: Problems that survived multiple weekly corrections—these are the real issues
+- **Monthly performance metrics**: Completion rates, workload balance, priority alignment, energy management, planning quality
+- **Strategic guidance for next month**: Month-level priorities, capacity planning, category focus, recommended pacing
+- **Long-term system refinements**: 3-6 fundamental changes to try in your planning system
+
+Monthly analyses are **strategic level**, not tactical. They reveal patterns invisible at the weekly level and help you understand your actual productivity rhythms over time.
+
+## Directory Structure
+
+TaskTriage organizes your analyses in a clear hierarchy:
+
+```
+Notes/
+├── daily/
+│   ├── 20251225_074353.txt                    # Your daily task notes
+│   ├── 20251225_074353.daily_analysis.txt     # Analysis output
+│   ├── 20251226_094500.png
+│   └── 20251226_094500.daily_analysis.txt
+├── weekly/
+│   ├── 20251223.weekly_analysis.txt           # Week of Dec 23-27
+│   └── 20251230.weekly_analysis.txt           # Week of Dec 30-Jan 3
+└── monthly/
+    └── 202512.monthly_analysis.txt            # December 2025 synthesis
+```
+
+Filename formats:
+- **Daily notes**: `YYYYMMDD_HHMMSS.{txt|png|jpg|...}` (e.g., `20251225_074353.txt`)
+- **Daily analyses**: `YYYYMMDD_HHMMSS.daily_analysis.txt`
+- **Weekly analyses**: `YYYYMMDD.weekly_analysis.txt` (date is Monday of that week)
+- **Monthly analyses**: `YYYYMM.monthly_analysis.txt` (e.g., `202512.monthly_analysis.txt` for December 2025)
+
 ## Task Commands
 
 If you're using Task for automation, here are the available commands:
@@ -364,8 +422,8 @@ task venv             # Create virtual environment
 task sync             # Sync dependencies from lock file
 task lock             # Update the lock file
 task test             # Run tests
-task aliases          # Add triage shell alias
-task aliases:remove   # Remove shell aliases
+task alias          # Add triage shell alias
+task alias:remove   # Remove shell alias
 task clean            # Remove build artifacts
 task clean:all        # Nuclear option: remove everything including venv
 ```
@@ -472,9 +530,11 @@ from tasktriage import (
     analyze_tasks,
     get_daily_prompt,
     get_weekly_prompt,
+    get_monthly_prompt,
     load_task_notes,
     load_all_unanalyzed_task_notes,
     collect_weekly_analyses_for_week,
+    collect_monthly_analyses_for_month,
     extract_text_from_image,
     GoogleDriveClient,
     get_notes_source,
@@ -490,10 +550,19 @@ print(daily_prompt.input_variables)  # ['current_date', 'task_notes']
 weekly_prompt = get_weekly_prompt()
 print(weekly_prompt.input_variables)  # ['week_start', 'week_end', 'task_notes']
 
+monthly_prompt = get_monthly_prompt()
+print(monthly_prompt.input_variables)  # ['month_start', 'month_end', 'task_notes']
+
 # Load all unanalyzed daily notes
 unanalyzed = load_all_unanalyzed_task_notes("daily", "png")
 for content, path, date in unanalyzed:
     print(f"Found: {path.name}")
+
+# Collect analyses for a specific period
+from datetime import datetime
+month_start = datetime(2025, 12, 1)
+month_end = datetime(2025, 12, 31)
+monthly_content, output_path, ms, me = collect_monthly_analyses_for_month(month_start, month_end)
 
 # Use the Google Drive client directly
 client = GoogleDriveClient()

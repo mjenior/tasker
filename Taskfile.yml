@@ -81,7 +81,7 @@ tasks:
         echo "  1. Edit .env with your API key and notes source configuration"
         echo "  2. Run 'source .venv/bin/activate' to activate the virtual environment"
         echo "  3. Run 'task setup:output-dir' to create the analysis output directory"
-        echo "  4. Run 'task aliases' to add shell shortcuts (optional)"
+        echo "  4. Run 'task alias' to add shell shortcuts (optional)"
 
   test:
     desc: Run tests
@@ -89,22 +89,22 @@ tasks:
     cmds:
       - uv run pytest -v
 
-  aliases:
+  alias:
     desc: Add triage alias command to shell config
     preconditions:
-      - sh: 'grep -q "# TaskTriage aliases" "{{.SHELL_RC}}" 2>/dev/null && exit 1 || exit 0'
-        msg: "Aliases already exist in {{.SHELL_RC}}. Run 'task aliases:remove' first to update."
+      - sh: 'grep -q "# TaskTriage alias" "{{.SHELL_RC}}" 2>/dev/null && exit 1 || exit 0'
+        msg: "Aliases already exist in {{.SHELL_RC}}. Run 'task alias:remove' first to update."
     cmds:
       - echo "" >> "{{.SHELL_RC}}"
-      - echo "# TaskTriage aliases" >> "{{.SHELL_RC}}"
+      - echo "# TaskTriage alias" >> "{{.SHELL_RC}}"
       - echo "alias triage='tasktriage'" >> "{{.SHELL_RC}}"
       - echo "Aliases added to {{.SHELL_RC}}"
       - echo "Run 'source {{.SHELL_RC}}' or restart your terminal to use them."
 
-  aliases:remove:
-    desc: Remove aliases from shell config
+  alias:remove:
+    desc: Remove alias from shell config
     cmds:
-      - sed -i '/# TaskTriage aliases/,/^alias triage=/d' "{{.SHELL_RC}}"
+      - sed -i '/# TaskTriage alias/,/^alias triage=/d' "{{.SHELL_RC}}"
       - echo "Aliases removed from {{.SHELL_RC}}"
 
   clean:
