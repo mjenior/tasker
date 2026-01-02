@@ -25,6 +25,9 @@ wheels/
 venv/
 ENV/
 
+# Task
+.task/
+
 # Environment variables
 .env
 .env.local

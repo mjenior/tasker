@@ -13,14 +13,14 @@ Here's the deal: you write your tasks on a fancy note-taking device (reMarkable,
 
 ## Features
 
-- Automatically finds the most recent notes file you haven't analyzed yet (because who wants to manually track that?)
+- Automatically finds ALL unanalyzed notes files and processes them in parallel (because who wants to manually track that?)
 - Handles both text files (.txt) and images (.png, .jpg, .jpeg, .gif, .webp)
 - Extracts text from your handwritten notes using Claude's vision API—yes, even your terrible handwriting
 - Works with local/USB directories or Google Drive (your choice)
 - Tweak Claude's model parameters via a simple YAML file
 - GTD-based prioritization with built-in workload guardrails that cap you at 6-7 hours of focused work per day (because burnout is bad, actually)
-- Weekly rollup analysis that shows you where your planning keeps falling apart
-- Shell aliases so you can just type `daily` or `weekly` instead of the full command
+- Auto-triggers weekly analyses when you have 5+ weekday analyses or when the work week has passed
+- Shell alias so you can just type `triage` instead of the full command
 
 ## Requirements
 
@@ -285,41 +285,42 @@ You can use these as templates when creating your own task note files. The examp
 
 ## Usage
 
-### Daily Analysis
-
-To analyze your most recent unanalyzed daily notes:
+To run TaskTriage:
 
 ```bash
-task-triage --type daily
-# or using the tasktriage command
-tasktriage --type daily
-# or just use the alias (if you set it up)
-daily
+# Using the full command
+tasktriage
+
+# or using the alias (if you set it up)
+triage
+
+# Specify file type preference (defaults to png)
+tasktriage --files txt
+tasktriage --files png
 ```
 
-What happens:
-1. TaskTriage finds the most recent `.txt` or image file in `Notes/daily/` that doesn't have an analysis yet
-2. If it's an image, Claude's vision API extracts the text from your handwriting
-3. The daily analysis prompt kicks in and generates a realistic execution plan
-4. The analysis gets saved as `{filename}.daily_analysis.txt`
+### What Happens When You Run It
 
-### Weekly Analysis
+**Daily Analysis (runs automatically):**
+1. TaskTriage finds ALL unanalyzed `.txt` or image files in `Notes/daily/`
+2. Processes them in parallel (up to 5 concurrent API calls)
+3. For images, Claude's vision API extracts the text from your handwriting
+4. Each file gets analyzed and saved as `{filename}.daily_analysis.txt`
+5. Shows progress in real-time with success/failure indicators
 
-To generate a weekly review from your previous week's daily work:
+**Weekly Analysis (auto-triggers when conditions are met):**
 
-```bash
-task-triage --type weekly
-# or using the tasktriage command
-tasktriage --type weekly
-# or just use the alias
-weekly
-```
+After processing daily files, TaskTriage checks if any weeks need analysis. A weekly analysis is triggered automatically when:
+- **5+ weekday analyses exist** for a work week (Monday-Friday), OR
+- **The work week has passed** and at least 1 daily analysis exists for that week
 
-What happens:
-1. Grabs all `*.daily_analysis.txt` files from the previous Monday through Sunday
+When triggered:
+1. Collects all daily analysis files from Monday-Friday of the qualifying week
 2. Combines them with date labels
 3. Generates a comprehensive weekly analysis looking at patterns and problems
 4. Saves to `Notes/weekly/{week_start}.weekly_analysis.txt`
+
+You don't have to manually trigger weekly analyses anymore—TaskTriage handles it automatically.
 
 ## Daily Analysis Output
 
@@ -356,7 +357,7 @@ task venv             # Create virtual environment
 task sync             # Sync dependencies from lock file
 task lock             # Update the lock file
 task test             # Run tests
-task aliases          # Add daily/weekly shell aliases
+task aliases          # Add triage shell alias
 task aliases:remove   # Remove shell aliases
 task clean            # Remove build artifacts
 task clean:all        # Nuclear option: remove everything including venv
@@ -465,6 +466,8 @@ from tasktriage import (
     get_daily_prompt,
     get_weekly_prompt,
     load_task_notes,
+    load_all_unanalyzed_task_notes,
+    collect_weekly_analyses_for_week,
     extract_text_from_image,
     GoogleDriveClient,
     get_notes_source,
@@ -479,6 +482,11 @@ print(daily_prompt.input_variables)  # ['current_date', 'task_notes']
 
 weekly_prompt = get_weekly_prompt()
 print(weekly_prompt.input_variables)  # ['week_start', 'week_end', 'task_notes']
+
+# Load all unanalyzed daily notes
+unanalyzed = load_all_unanalyzed_task_notes("daily", "png")
+for content, path, date in unanalyzed:
+    print(f"Found: {path.name}")
 
 # Use the Google Drive client directly
 client = GoogleDriveClient()

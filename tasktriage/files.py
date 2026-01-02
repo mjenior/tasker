@@ -144,8 +144,85 @@ def _load_task_notes_usb(notes_type: str = "daily", file_preference: str = "png"
     )
 
 
-def _collect_weekly_analyses_usb() -> tuple[str, Path, datetime, datetime]:
-    """Collect weekly analyses from USB/local directory.
+def _load_all_unanalyzed_task_notes_usb(notes_type: str = "daily", file_preference: str = "png") -> list[tuple[str, Path, datetime]]:
+    """Load all unanalyzed task notes from USB/local directory.
+
+    Args:
+        notes_type: Type of notes to load (e.g., "daily", "weekly")
+        file_preference: File type preference ("png" or "txt")
+
+    Returns:
+        List of tuples of (file contents, path to the notes file, parsed datetime from filename)
+    """
+    base_dir = Path(USB_DIR)
+
+    if not base_dir.exists():
+        raise FileNotFoundError(
+            f"USB directory not found: {USB_DIR}"
+        )
+
+    notes_dir = base_dir / notes_type
+
+    if not notes_dir.exists():
+        raise FileNotFoundError(f"Notes directory not found: {notes_dir}")
+
+    # Determine which extensions to search based on preference
+    if file_preference == "txt":
+        search_extensions = TEXT_EXTENSIONS
+    else:  # default to "png"
+        search_extensions = IMAGE_EXTENSIONS
+
+    # Find all files matching preference and sort by name (newest first based on timestamp)
+    all_files = []
+    for ext in search_extensions:
+        all_files.extend(notes_dir.glob(f"*{ext}"))
+    all_files = sorted(all_files, reverse=True)
+
+    unanalyzed_files = []
+
+    for notes_path in all_files:
+        # Skip files that are already analysis files
+        if "_analysis" in notes_path.name:
+            continue
+
+        # Extract timestamp from filename (handles page identifiers)
+        timestamp = _extract_timestamp(notes_path.name)
+        if not timestamp:
+            continue
+
+        # Check if this file already has an associated analysis file
+        # Use timestamp only so all pages of a multi-page note share one analysis
+        analysis_filename = f"{timestamp}.{notes_type}_analysis.txt"
+        analysis_path = notes_dir / analysis_filename
+
+        if not analysis_path.exists():
+            # Parse datetime from the extracted timestamp
+            file_date = _parse_filename_datetime(notes_path.name)
+            if not file_date:
+                continue
+
+            # Extract text based on file type
+            if notes_path.suffix.lower() in IMAGE_EXTENSIONS:
+                file_contents = extract_text_from_image(notes_path)
+            else:
+                file_contents = notes_path.read_text()
+
+            unanalyzed_files.append((file_contents, notes_path, file_date))
+
+    if not unanalyzed_files:
+        raise FileNotFoundError(
+            f"No unanalyzed notes files found in: {notes_dir}"
+        )
+
+    return unanalyzed_files
+
+
+def _collect_weekly_analyses_usb_for_week(week_start: datetime, week_end: datetime) -> tuple[str, Path, datetime, datetime]:
+    """Collect weekly analyses from USB/local directory for a specific work week.
+
+    Args:
+        week_start: Start of work week (Monday)
+        week_end: End of work week (Friday)
 
     Returns:
         Tuple of (combined analysis text, output path, week start, week end)
@@ -165,16 +242,7 @@ def _collect_weekly_analyses_usb() -> tuple[str, Path, datetime, datetime]:
 
     weekly_dir.mkdir(exist_ok=True)
 
-    # Calculate previous week's date range (Monday to Sunday)
-    today = datetime.now()
-    days_since_sunday = (today.weekday() + 1) % 7
-    last_sunday = today - timedelta(days=days_since_sunday)
-    last_monday = last_sunday - timedelta(days=6)
-
-    week_start = last_monday.replace(hour=0, minute=0, second=0, microsecond=0)
-    week_end = last_sunday.replace(hour=23, minute=59, second=59, microsecond=999999)
-
-    # Find all daily_analysis files from the previous week
+    # Find all daily_analysis files from the specified week
     analysis_files = sorted(daily_dir.glob("*.daily_analysis.txt"))
 
     collected_analyses = []
@@ -201,6 +269,29 @@ def _collect_weekly_analyses_usb() -> tuple[str, Path, datetime, datetime]:
     output_path = weekly_dir / f"{week_label}.week.txt"
 
     return combined_text, output_path, week_start, week_end
+
+
+def _collect_weekly_analyses_usb() -> tuple[str, Path, datetime, datetime]:
+    """Collect weekly analyses from USB/local directory for previous work week.
+
+    Returns:
+        Tuple of (combined analysis text, output path, week start, week end)
+    """
+    # Calculate previous work week's date range (Monday to Friday)
+    today = datetime.now()
+
+    # Get current week's Monday
+    days_since_monday = today.weekday()
+    current_monday = today - timedelta(days=days_since_monday)
+
+    # Previous week's Monday and Friday
+    last_monday = current_monday - timedelta(days=7)
+    last_friday = last_monday + timedelta(days=4)
+
+    week_start = last_monday.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_end = last_friday.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    return _collect_weekly_analyses_usb_for_week(week_start, week_end)
 
 
 def _save_analysis_usb(analysis: str, input_path: Path, notes_type: str = "daily") -> Path:
@@ -345,8 +436,109 @@ def _load_task_notes_gdrive(notes_type: str = "daily", file_preference: str = "p
     )
 
 
-def _collect_weekly_analyses_gdrive() -> tuple[str, Path, datetime, datetime]:
-    """Collect weekly analyses from Google Drive.
+def _load_all_unanalyzed_task_notes_gdrive(notes_type: str = "daily", file_preference: str = "png") -> list[tuple[str, Path, datetime]]:
+    """Load all unanalyzed task notes from Google Drive.
+
+    Args:
+        notes_type: Type of notes to load (e.g., "daily", "weekly")
+        file_preference: File type preference ("png" or "txt")
+
+    Returns:
+        List of tuples of (file contents, virtual path, parsed datetime from filename)
+    """
+    from .config import LOCAL_OUTPUT_DIR
+    from .gdrive import (
+        GoogleDriveClient,
+        IMAGE_MIME_TYPES,
+        parse_filename_datetime,
+        get_file_extension,
+        extract_timestamp_from_filename,
+    )
+
+    client = GoogleDriveClient()
+    files = client.list_notes_files(notes_type)
+
+    unanalyzed_files = []
+
+    for file_info in files:
+        filename = file_info["name"]
+        file_id = file_info["id"]
+        mime_type = file_info["mimeType"]
+
+        # Skip analysis files
+        if "_analysis" in filename:
+            continue
+
+        # Filter by file type preference
+        file_ext = Path(filename).suffix.lower()
+        if file_preference == "txt":
+            if file_ext not in TEXT_EXTENSIONS:
+                continue
+        else:  # default to "png"
+            if file_ext not in IMAGE_EXTENSIONS:
+                continue
+
+        # Parse datetime from filename
+        file_date = parse_filename_datetime(filename)
+        if not file_date:
+            continue
+
+        # Check if analysis already exists
+        # Use timestamp only so all pages of a multi-page note share one analysis
+        timestamp = extract_timestamp_from_filename(filename)
+        if timestamp:
+            analysis_filename = f"{timestamp}.{notes_type}_analysis.txt"
+        else:
+            stem = Path(filename).stem
+            if "." in stem:
+                stem = stem.split(".")[0]
+            analysis_filename = f"{stem}.{notes_type}_analysis.txt"
+
+        # Check local output directory first (when LOCAL_OUTPUT_DIR is set)
+        if _analysis_exists_locally(notes_type, analysis_filename):
+            continue
+
+        # Fall back to checking Google Drive (for setups without local output)
+        if not LOCAL_OUTPUT_DIR and client.file_exists(notes_type, analysis_filename):
+            continue
+
+        # Download and process the file
+        if mime_type in IMAGE_MIME_TYPES:
+            # Download image to temp file and extract text
+            image_data = client.download_file(file_id)
+            ext = get_file_extension(mime_type)
+
+            with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+                tmp.write(image_data)
+                tmp_path = Path(tmp.name)
+
+            try:
+                file_contents = extract_text_from_image(tmp_path)
+            finally:
+                tmp_path.unlink()
+        else:
+            # Download text file directly
+            file_contents = client.download_file_text(file_id)
+
+        # Create a virtual path for compatibility with save functions
+        virtual_path = Path(f"gdrive://{notes_type}/{filename}")
+
+        unanalyzed_files.append((file_contents, virtual_path, file_date))
+
+    if not unanalyzed_files:
+        raise FileNotFoundError(
+            f"No unanalyzed notes files found in Google Drive folder: {notes_type}/"
+        )
+
+    return unanalyzed_files
+
+
+def _collect_weekly_analyses_gdrive_for_week(week_start: datetime, week_end: datetime) -> tuple[str, Path, datetime, datetime]:
+    """Collect weekly analyses from Google Drive for a specific work week.
+
+    Args:
+        week_start: Start of work week (Monday)
+        week_end: End of work week (Friday)
 
     Returns:
         Tuple of (combined analysis text, virtual output path, week start, week end)
@@ -354,15 +546,6 @@ def _collect_weekly_analyses_gdrive() -> tuple[str, Path, datetime, datetime]:
     from .gdrive import GoogleDriveClient, parse_filename_datetime
 
     client = GoogleDriveClient()
-
-    # Calculate previous week's date range (Monday to Sunday)
-    today = datetime.now()
-    days_since_sunday = (today.weekday() + 1) % 7
-    last_sunday = today - timedelta(days=days_since_sunday)
-    last_monday = last_sunday - timedelta(days=6)
-
-    week_start = last_monday.replace(hour=0, minute=0, second=0, microsecond=0)
-    week_end = last_sunday.replace(hour=23, minute=59, second=59, microsecond=999999)
 
     # List all files in daily folder
     try:
@@ -398,6 +581,29 @@ def _collect_weekly_analyses_gdrive() -> tuple[str, Path, datetime, datetime]:
     virtual_path = Path(f"gdrive://weekly/{week_label}.week.txt")
 
     return combined_text, virtual_path, week_start, week_end
+
+
+def _collect_weekly_analyses_gdrive() -> tuple[str, Path, datetime, datetime]:
+    """Collect weekly analyses from Google Drive for previous work week.
+
+    Returns:
+        Tuple of (combined analysis text, virtual output path, week start, week end)
+    """
+    # Calculate previous work week's date range (Monday to Friday)
+    today = datetime.now()
+
+    # Get current week's Monday
+    days_since_monday = today.weekday()
+    current_monday = today - timedelta(days=days_since_monday)
+
+    # Previous week's Monday and Friday
+    last_monday = current_monday - timedelta(days=7)
+    last_friday = last_monday + timedelta(days=4)
+
+    week_start = last_monday.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_end = last_friday.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    return _collect_weekly_analyses_gdrive_for_week(week_start, week_end)
 
 
 def _save_analysis_gdrive(analysis: str, input_path: Path, notes_type: str = "daily") -> Path:
@@ -488,14 +694,198 @@ def load_task_notes(notes_type: str = "daily", file_preference: str = "png") -> 
         return _load_task_notes_usb(notes_type, file_preference)
 
 
+def load_all_unanalyzed_task_notes(notes_type: str = "daily", file_preference: str = "png") -> list[tuple[str, Path, datetime]]:
+    """Load all unanalyzed task notes files.
+
+    Automatically selects between USB and Google Drive based on configuration.
+
+    Supports both .txt files (read directly) and image files (.png, .jpg, .jpeg,
+    .gif, .webp) which are processed through Claude's vision API to extract text.
+
+    Args:
+        notes_type: Type of notes to load (e.g., "daily", "weekly")
+        file_preference: File type preference - "png" or "txt" (default: "png")
+
+    Returns:
+        List of tuples of (file contents, path to the notes file, parsed datetime from filename)
+
+    Raises:
+        FileNotFoundError: If the notes directory doesn't exist or no unanalyzed files found
+    """
+    source = get_active_source()
+
+    if source == "gdrive":
+        return _load_all_unanalyzed_task_notes_gdrive(notes_type, file_preference)
+    else:
+        return _load_all_unanalyzed_task_notes_usb(notes_type, file_preference)
+
+
+def _get_week_boundaries(date: datetime) -> tuple[datetime, datetime]:
+    """Get the Monday-Friday boundaries for the work week containing the given date.
+
+    Args:
+        date: Any date within the target week
+
+    Returns:
+        Tuple of (monday_start, friday_end) as datetime objects
+    """
+    # Calculate Monday (weekday() returns 0=Monday, 6=Sunday)
+    days_since_monday = date.weekday()
+    monday = date - timedelta(days=days_since_monday)
+    monday = monday.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # Calculate Friday (4 days after Monday)
+    friday = monday + timedelta(days=4)
+    friday = friday.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    return monday, friday
+
+
+def _weekly_analysis_exists(week_start: datetime) -> bool:
+    """Check if a weekly analysis already exists for the given week.
+
+    Args:
+        week_start: Monday date of the week to check
+
+    Returns:
+        True if weekly analysis exists, False otherwise
+    """
+    source = get_active_source()
+    week_label = week_start.strftime("%Y%m%d")
+
+    if source == "gdrive":
+        from .gdrive import GoogleDriveClient
+        from .config import LOCAL_OUTPUT_DIR
+
+        # Check local output directory first
+        if LOCAL_OUTPUT_DIR:
+            analysis_path = Path(LOCAL_OUTPUT_DIR) / "weekly" / f"{week_label}.weekly_analysis.txt"
+            if analysis_path.exists():
+                return True
+
+        # Check Google Drive
+        client = GoogleDriveClient()
+        return client.file_exists("weekly", f"{week_label}.weekly_analysis.txt")
+    else:
+        # Check USB/local directory
+        weekly_dir = Path(USB_DIR) / "weekly"
+        if not weekly_dir.exists():
+            return False
+        analysis_path = weekly_dir / f"{week_label}.weekly_analysis.txt"
+        return analysis_path.exists()
+
+
+def _find_weeks_needing_analysis() -> list[tuple[datetime, datetime]]:
+    """Find all work weeks that should have weekly analyses but don't.
+
+    A work week (Monday-Friday) needs analysis if:
+    1. It has 5+ Monday-Friday daily analyses, OR
+    2. The work week has ended (Friday has passed) AND it has at least 1 daily analysis
+
+    Returns:
+        List of tuples of (monday_start, friday_end) for weeks needing analysis
+    """
+    source = get_active_source()
+
+    # Collect all daily analysis files and their dates
+    analysis_dates = []
+
+    if source == "gdrive":
+        from .gdrive import GoogleDriveClient, parse_filename_datetime
+        client = GoogleDriveClient()
+        files = client.list_notes_files("daily")
+
+        for file_info in files:
+            filename = file_info["name"]
+            if ".daily_analysis.txt" in filename:
+                file_date = parse_filename_datetime(filename)
+                if file_date:
+                    analysis_dates.append(file_date)
+    else:
+        daily_dir = Path(USB_DIR) / "daily"
+        if daily_dir.exists():
+            for analysis_file in daily_dir.glob("*.daily_analysis.txt"):
+                file_date = _parse_filename_datetime(analysis_file.name)
+                if file_date:
+                    analysis_dates.append(file_date)
+
+    if not analysis_dates:
+        return []
+
+    # Group analyses by week
+    weeks_map = {}  # week_start -> list of dates
+    for file_date in analysis_dates:
+        week_start, week_end = _get_week_boundaries(file_date)
+        week_key = week_start.strftime("%Y%m%d")
+
+        if week_key not in weeks_map:
+            weeks_map[week_key] = {
+                "start": week_start,
+                "end": week_end,
+                "dates": []
+            }
+        weeks_map[week_key]["dates"].append(file_date)
+
+    # Determine which weeks need analysis
+    weeks_needing_analysis = []
+    today = datetime.now()
+
+    for week_key, week_data in weeks_map.items():
+        week_start = week_data["start"]
+        week_end = week_data["end"]
+        dates = week_data["dates"]
+
+        # Skip if weekly analysis already exists
+        if _weekly_analysis_exists(week_start):
+            continue
+
+        # Count weekday analyses (Monday=0 through Friday=4)
+        weekday_count = sum(1 for d in dates if d.weekday() < 5)
+
+        # Condition 1: Has 5+ weekday analyses
+        if weekday_count >= 5:
+            weeks_needing_analysis.append((week_start, week_end))
+            continue
+
+        # Condition 2: Week has passed and has at least 1 analysis
+        if today > week_end and len(dates) > 0:
+            weeks_needing_analysis.append((week_start, week_end))
+
+    return weeks_needing_analysis
+
+
+def collect_weekly_analyses_for_week(week_start: datetime, week_end: datetime) -> tuple[str, Path, datetime, datetime]:
+    """Collect all daily analysis files for a specific work week.
+
+    Automatically selects between USB and Google Drive based on configuration.
+
+    Args:
+        week_start: Start of work week (Monday)
+        week_end: End of work week (Friday)
+
+    Returns:
+        Tuple of (combined analysis text, output path for weekly analysis,
+                  week start datetime, week end datetime)
+
+    Raises:
+        FileNotFoundError: If directories don't exist or no analyses found for the week
+    """
+    source = get_active_source()
+
+    if source == "gdrive":
+        return _collect_weekly_analyses_gdrive_for_week(week_start, week_end)
+    else:
+        return _collect_weekly_analyses_usb_for_week(week_start, week_end)
+
+
 def collect_weekly_analyses() -> tuple[str, Path, datetime, datetime]:
-    """Collect all daily analysis files from the previous week.
+    """Collect all daily analysis files from the previous work week (Monday-Friday).
 
     Automatically selects between USB and Google Drive based on configuration.
 
     Returns:
         Tuple of (combined analysis text, output path for weekly analysis,
-                  week start datetime, week end datetime)
+                  week start datetime (Monday), week end datetime (Friday))
 
     Raises:
         FileNotFoundError: If directories don't exist or no analyses found for the week

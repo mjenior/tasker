@@ -43,7 +43,9 @@ from .image import (
 # File operations
 from .files import (
     load_task_notes,
+    load_all_unanalyzed_task_notes,
     collect_weekly_analyses,
+    collect_weekly_analyses_for_week,
     save_analysis,
     get_notes_source,
     TEXT_EXTENSIONS,
@@ -70,7 +72,9 @@ __all__ = [
     # Core functions
     "analyze_tasks",
     "load_task_notes",
+    "load_all_unanalyzed_task_notes",
     "collect_weekly_analyses",
+    "collect_weekly_analyses_for_week",
     "save_analysis",
     "extract_text_from_image",
     "get_notes_source",
