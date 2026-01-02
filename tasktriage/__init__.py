@@ -26,10 +26,16 @@ from .config import (
 from .prompts import (
     get_daily_prompt,
     get_weekly_prompt,
+    get_monthly_prompt,
+    get_annual_prompt,
     DAILY_SYSTEM_PROMPT,
     DAILY_HUMAN_PROMPT,
     WEEKLY_SYSTEM_PROMPT,
     WEEKLY_HUMAN_PROMPT,
+    MONTHLY_SYSTEM_PROMPT,
+    MONTHLY_HUMAN_PROMPT,
+    ANNUAL_SYSTEM_PROMPT,
+    ANNUAL_HUMAN_PROMPT,
     IMAGE_EXTRACTION_PROMPT,
 )
 
@@ -43,7 +49,11 @@ from .image import (
 # File operations
 from .files import (
     load_task_notes,
+    load_all_unanalyzed_task_notes,
     collect_weekly_analyses,
+    collect_weekly_analyses_for_week,
+    collect_monthly_analyses_for_month,
+    collect_annual_analyses_for_year,
     save_analysis,
     get_notes_source,
     TEXT_EXTENSIONS,
@@ -70,7 +80,11 @@ __all__ = [
     # Core functions
     "analyze_tasks",
     "load_task_notes",
+    "load_all_unanalyzed_task_notes",
     "collect_weekly_analyses",
+    "collect_weekly_analyses_for_week",
+    "collect_monthly_analyses_for_month",
+    "collect_annual_analyses_for_year",
     "save_analysis",
     "extract_text_from_image",
     "get_notes_source",
@@ -92,10 +106,16 @@ __all__ = [
     # Prompt templates
     "get_daily_prompt",
     "get_weekly_prompt",
+    "get_monthly_prompt",
+    "get_annual_prompt",
     "DAILY_SYSTEM_PROMPT",
     "DAILY_HUMAN_PROMPT",
     "WEEKLY_SYSTEM_PROMPT",
     "WEEKLY_HUMAN_PROMPT",
+    "MONTHLY_SYSTEM_PROMPT",
+    "MONTHLY_HUMAN_PROMPT",
+    "ANNUAL_SYSTEM_PROMPT",
+    "ANNUAL_HUMAN_PROMPT",
     "IMAGE_EXTRACTION_PROMPT",
     # Constants
     "IMAGE_EXTENSIONS",
