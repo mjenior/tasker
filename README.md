@@ -30,6 +30,7 @@ Here's the deal: you write your tasks on a note-taking device (reMarkable, Super
 - Auto-triggers monthly analyses when you have 4+ weekly analyses or when the calendar month has ended
 - Auto-triggers annual analyses when you have 12 monthly analyses or when the calendar year has ended with at least 1 monthly analysis
 - Shell alias so you can just type `triage` instead of the full command
+- **Web Interface**: A professional Streamlit UI for browsing, editing, and triaging your notes visually
 
 ## Requirements
 
@@ -319,6 +320,35 @@ tasktriage --files txt
 tasktriage --files png
 ```
 
+### Web Interface
+
+TaskTriage includes a professional web interface built with Streamlit. Launch it with:
+
+```bash
+# Using Task
+task ui
+
+# Or directly with uv
+uv run streamlit run streamlit_app.py
+```
+
+The UI opens in your browser at `http://localhost:8501` and provides:
+
+**Left Panel (Controls)**
+- **Triage Button** - Run the full analysis pipeline with real-time progress updates
+- **Configuration** - Edit `.env` and `config.yaml` settings directly in the browser (API keys, notes source, model parameters)
+- **Raw Notes List** - Browse `.txt` and image files from your `daily/` directory, sorted by date
+- **Analysis Files List** - Browse all generated analysis files across daily/weekly/monthly/annual
+- **Quick Markup Tools** - Add task markers (✓ completed, ✗ removed, * urgent) with one click
+
+**Right Panel (Editor)**
+- Full-height text editor for viewing and editing selected files
+- Image preview for handwritten note images
+- Save/Revert buttons with unsaved changes indicator
+- Notes source status display
+
+The web interface runs the same analysis pipeline as the CLI, with parallel processing and automatic triggering of weekly/monthly/annual analyses when conditions are met.
+
 ### What Happens When You Run It
 
 TaskTriage follows a strict temporal hierarchy, ensuring each level completes before the next begins:
@@ -461,10 +491,15 @@ task venv             # Create virtual environment
 task sync             # Sync dependencies from lock file
 task lock             # Update the lock file
 task test             # Run tests
-task alias          # Add triage shell alias
-task alias:remove   # Remove shell alias
+task ui               # Launch the Streamlit web interface
+task alias            # Add triage shell alias
+task alias:remove     # Remove shell alias
 task clean            # Remove build artifacts
 task clean:all        # Nuclear option: remove everything including venv
+task bump             # Show version bump options
+task bump:patch       # Bump patch version (e.g. 0.1.1 → 0.1.2)
+task bump:minor       # Bump minor version (e.g. 0.1.1 → 0.2.0)
+task bump:major       # Bump major version (e.g. 0.1.1 → 1.0.0)
 ```
 
 ## Testing
@@ -536,9 +571,11 @@ Here's how the code is organized:
 ```
 tasktriage/
 ├── .env.template      # Environment variables template
+├── .bumpversion.toml  # Version bump configuration
 ├── config.yaml        # Claude model configuration
 ├── pyproject.toml     # Project dependencies and metadata
 ├── Taskfile.yml       # Task runner configuration
+├── streamlit_app.py   # Web interface (Streamlit UI)
 ├── README.md
 ├── tasktriage/        # Python package
 │   ├── __init__.py    # Package exports
