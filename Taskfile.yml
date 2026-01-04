@@ -90,6 +90,12 @@ tasks:
     cmds:
       - uv run pytest -v
 
+  ui:
+    desc: Launch the Streamlit web interface
+    deps: [install]
+    cmds:
+      - uv run streamlit run streamlit_app.py
+
   alias:
     desc: Add triage alias command to shell config
     preconditions:

@@ -11,15 +11,19 @@ Supports reading notes from both local/USB directories and Google Drive.
 from .config import (
     fetch_api_key,
     load_model_config,
-    USB_DIR,
+    USB_INPUT_DIR,
+    LOCAL_INPUT_DIR,
     CONFIG_PATH,
     DEFAULT_MODEL,
     GOOGLE_CREDENTIALS_PATH,
     GOOGLE_DRIVE_FOLDER_ID,
     NOTES_SOURCE,
     is_usb_available,
+    is_local_input_available,
     is_gdrive_available,
     get_active_source,
+    get_all_input_directories,
+    get_primary_input_directory,
 )
 
 # Prompt templates
@@ -72,7 +76,7 @@ from .analysis import analyze_tasks
 # CLI entry point
 from .cli import main
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 __all__ = [
     # Main entry point
@@ -94,15 +98,19 @@ __all__ = [
     # Configuration
     "fetch_api_key",
     "load_model_config",
-    "USB_DIR",
+    "USB_INPUT_DIR",
+    "LOCAL_INPUT_DIR",
     "CONFIG_PATH",
     "DEFAULT_MODEL",
     "GOOGLE_CREDENTIALS_PATH",
     "GOOGLE_DRIVE_FOLDER_ID",
     "NOTES_SOURCE",
     "is_usb_available",
+    "is_local_input_available",
     "is_gdrive_available",
     "get_active_source",
+    "get_all_input_directories",
+    "get_primary_input_directory",
     # Prompt templates
     "get_daily_prompt",
     "get_weekly_prompt",
