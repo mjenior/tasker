@@ -709,6 +709,7 @@ HELP_TEXT = """TaskTriage uses Claude AI to turn your handwritten task notes int
 
 **Left Panel (Controls)**
 - **Analyze Button** - Run the full analysis pipeline with real-time progress updates
+- **Sync Button** - Saves current filew library to all currently configured directories
 - **Configuration** - Edit `.env` and `config.yaml` settings directly in the browser (API keys, notes source, model parameters)
 - **Raw Notes List** - Browse `.txt` and image files from your `daily/` directory, sorted by date
 - **Analysis Files List** - Browse all generated analysis files across daily/weekly/monthly/annual
