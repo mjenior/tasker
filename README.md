@@ -372,6 +372,10 @@ The UI opens in your browser at `http://localhost:8501` and provides:
 
 **Left Panel (Controls)**
 - **Triage Button** - Run the full analysis pipeline with real-time progress updates
+- **Sync Button** - Distribute all analysis files and raw notes from the output directory to all configured input directories (USB, Local, Google Drive)
+  - Copies analysis files (`.daily_analysis.txt`, `.weekly_analysis.txt`, etc.) and extracted raw notes (`.raw_notes.txt`) to all input directories
+  - Provides real-time progress updates and error reporting
+  - Useful for syncing generated analyses back to your note-taking device or backup locations
 - **Configuration** - Edit `.env` and `config.yaml` settings directly in the browser (API keys, notes source, model parameters)
 - **Raw Notes List** - Browse `.txt` and image files from your `daily/` directory, sorted by date
   - **Open** - Load a selected note file for editing
@@ -386,6 +390,33 @@ The UI opens in your browser at `http://localhost:8501` and provides:
 - **Quick Markup Tools** - Easily add task markers (✓ completed, ✗ removed, ☆ urgent), which are automatically interpretted at the right side of each line.
 
 The web interface runs the same analysis pipeline as the CLI, with parallel processing and automatic triggering of weekly/monthly/annual analyses when conditions are met.
+
+### Output Directory and File Sync Workflow
+
+TaskTriage uses a two-stage workflow for managing analysis files:
+
+**Stage 1: Generation (Primary Output)**
+All new analysis files and extracted raw notes are initially saved to `LOCAL_OUTPUT_DIR`. This is the "source of truth" for all generated files. This approach is necessary because:
+- Service accounts (for Google Drive) don't have storage quota to directly upload files
+- It provides a centralized location for all generated analyses
+- It serves as a backup location for your analysis history
+
+**Stage 2: Distribution (Sync)**
+Once analyses are generated, you can use the **Sync button** in the web UI to distribute these files to all your configured input directories:
+
+1. **To USB/Local Directories**: Files are copied via standard file operations
+2. **To Google Drive**: Files are uploaded to your configured Google Drive folder
+3. **Real-time Progress**: The UI shows live progress updates and reports any errors
+
+This workflow ensures that:
+- Your analyses are always backed up in `LOCAL_OUTPUT_DIR`
+- Your note-taking device (USB/Supernote/reMarkable) stays synchronized with the latest analyses
+- Google Drive users can upload analyses manually or on-demand rather than being limited by service account quota constraints
+
+**When to Use Sync:**
+- After running the Triage analysis to distribute results to your devices
+- Periodically to ensure your backup locations stay in sync
+- To upload analyses to Google Drive when you have multiple outputs accumulated
 
 ### What Happens When You Run It
 
