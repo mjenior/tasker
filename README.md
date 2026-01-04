@@ -5,7 +5,7 @@ TaskTriage - ethically sourced optimism for your productivity.
 You know that feeling when you write a great handwritten to-do list and then... don't know what to do first, or worse don't actually do any of it? This CLI tool uses Claude AI to turn your handwritten task notes into realistic, actionable execution plans based on GTD principles. Think of it as a reality check for your optimistic planning habits.
 
 <div align="center">
-  <img src="./logo.png" alt="TaskTriage Logo" width="75%">
+  <img src="./.images/logo.png" alt="TaskTriage Logo" width="75%">
 </div>
 
 ## Overview
@@ -33,6 +33,10 @@ Here's the deal: you write your tasks on a note-taking device (reMarkable, Super
 - Auto-triggers annual analyses when you have 12 monthly analyses or when the calendar year has ended with at least 1 monthly analysis
 - Shell alias so you can just type `triage` instead of the full command
 - **Web Interface**: A professional Streamlit UI for browsing, editing, creating, and triaging your notes visually
+
+<div align="center">
+  <img src="./.images/ui.png" alt="Streamlit App" width="75%">
+</div>
 
 ## Requirements
 
