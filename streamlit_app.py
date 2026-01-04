@@ -4,6 +4,7 @@ TaskTriage Streamlit UI
 A professional, Canvas-style interface for the TaskTriage GTD-based task analysis tool.
 """
 
+
 import os
 import re
 import base64
@@ -27,7 +28,6 @@ from tasktriage import (
     is_usb_available,
     is_local_input_available,
     is_gdrive_available,
-    get_active_source,
     get_primary_input_directory,
     USB_INPUT_DIR,
     LOCAL_INPUT_DIR,
@@ -608,6 +608,103 @@ def select_file(file_path: Path):
         st.session_state.content_editor = content
 
 
+def sync_files_across_directories(output_dir: Path, progress_callback=None) -> dict:
+    """Sync all analysis files and raw notes from output directory to all configured input directories.
+
+    Args:
+        output_dir: The output directory where files are currently saved
+        progress_callback: Optional callback function for progress updates
+
+    Returns:
+        Dictionary with sync statistics: {total: int, synced: int, errors: list}
+    """
+    from tasktriage.config import get_all_input_directories, is_gdrive_available
+    from shutil import copy2
+
+    stats = {"total": 0, "synced": 0, "errors": []}
+
+    if not output_dir or not output_dir.exists():
+        if progress_callback:
+            progress_callback("Output directory not found")
+        return stats
+
+    # Get all files to sync (analysis files and raw notes)
+    files_to_sync = []
+    for subdir in ["daily", "weekly", "monthly", "annual"]:
+        subdir_path = output_dir / subdir
+        if subdir_path.exists():
+            # Get analysis files
+            files_to_sync.extend(subdir_path.glob("*.daily_analysis.txt"))
+            files_to_sync.extend(subdir_path.glob("*.weekly_analysis.txt"))
+            files_to_sync.extend(subdir_path.glob("*.monthly_analysis.txt"))
+            files_to_sync.extend(subdir_path.glob("*.annual_analysis.txt"))
+            # Get raw notes files
+            files_to_sync.extend(subdir_path.glob("*.raw_notes.txt"))
+
+    stats["total"] = len(files_to_sync)
+
+    if stats["total"] == 0:
+        if progress_callback:
+            progress_callback("No files to sync")
+        return stats
+
+    # Sync to all configured input directories
+    input_dirs = get_all_input_directories()
+
+    for file_path in files_to_sync:
+        # Determine which subdirectory this file belongs to
+        subdir_name = file_path.parent.name  # "daily", "weekly", etc.
+
+        for input_dir in input_dirs:
+            target_dir = input_dir / subdir_name
+            target_path = target_dir / file_path.name
+
+            try:
+                # Create subdirectory if it doesn't exist
+                target_dir.mkdir(parents=True, exist_ok=True)
+
+                # Copy file
+                copy2(file_path, target_path)
+                stats["synced"] += 1
+
+                if progress_callback:
+                    progress_callback(f"Synced: {file_path.name}")
+
+            except Exception as e:
+                error_msg = f"Failed to sync {file_path.name} to {input_dir}: {str(e)}"
+                stats["errors"].append(error_msg)
+                if progress_callback:
+                    progress_callback(f"Error: {file_path.name}")
+
+    # Try to sync to Google Drive if available
+    if is_gdrive_available():
+        try:
+            from tasktriage.gdrive import GoogleDriveClient
+
+            client = GoogleDriveClient()
+
+            for file_path in files_to_sync:
+                subdir_name = file_path.parent.name
+                file_content = file_path.read_text()
+
+                try:
+                    client.upload_file(subdir_name, file_path.name, file_content)
+                    stats["synced"] += 1
+                    if progress_callback:
+                        progress_callback(f"Synced to GDrive: {file_path.name}")
+                except Exception as e:
+                    error_msg = f"Failed to sync {file_path.name} to Google Drive: {str(e)}"
+                    stats["errors"].append(error_msg)
+                    if progress_callback:
+                        progress_callback(f"GDrive error: {file_path.name}")
+
+        except Exception as e:
+            error_msg = f"Google Drive sync failed: {str(e)}"
+            stats["errors"].append(error_msg)
+
+    return stats
+
+
 HELP_TEXT = """TaskTriage uses Claude AI to turn your handwritten task notes into realistic, actionable execution plans based on GTD principles. Think of it as a reality check for your optimistic planning habits.
 
 **Left Panel (Controls)**
@@ -645,10 +742,49 @@ def main():
         st.markdown('<p class="section-header">Actions</p>', unsafe_allow_html=True)
 
         triage_disabled = st.session_state.triage_running or notes_dir is None
-        if st.button("🔍 Analyze", type="primary", disabled=triage_disabled, use_container_width=True, key="btn_triage"):
+        if st.button("🔍 Analyze", type="primary", disabled=triage_disabled, 
+            use_container_width=True, key="btn_triage",
+            help="Perform any yet-to-be-done analyses"):
             st.session_state.triage_running = True
             st.session_state.triage_progress = []
             st.rerun()
+
+        if st.button("🔄 Sync", type="secondary", disabled=triage_disabled,
+            use_container_width=True, key="btn_sync",
+            help="Save all current files across available configured directories"):
+
+            # Get the output directory (where files are generated)
+            local_output = os.getenv("LOCAL_OUTPUT_DIR")
+            if not local_output:
+                st.error("LOCAL_OUTPUT_DIR not configured. Cannot sync files.")
+            else:
+                output_dir = Path(local_output)
+
+                # Create a progress area
+                progress_placeholder = st.empty()
+                status_placeholder = st.empty()
+
+                def progress_callback(msg: str):
+                    status_placeholder.write(f"• {msg}")
+
+                # Run sync
+                with progress_placeholder.container():
+                    st.info("🔄 Syncing files across all configured directories...")
+
+                stats = sync_files_across_directories(output_dir, progress_callback)
+
+                # Show results
+                progress_placeholder.empty()
+
+                if stats["total"] == 0:
+                    st.warning("No files to sync")
+                else:
+                    st.success(f"✅ Sync complete! Synced {stats['synced']} files")
+
+                    if stats["errors"]:
+                        with st.expander(f"⚠️ {len(stats['errors'])} Errors"):
+                            for error in stats["errors"]:
+                                st.error(error)
 
         with st.expander("Configuration", expanded=False):
             env_config = load_env_config()
@@ -937,7 +1073,7 @@ def main():
                 if is_usb_available():
                     st.success(f"✓ USB Input: {USB_INPUT_DIR}")
                 else:
-                    st.warning("✗ USB Input not configured")
+                    st.warning("✗ USB Input not found")
             except Exception:
                 st.warning("✗ USB Input not configured")
 
@@ -956,12 +1092,6 @@ def main():
                     st.warning("✗ Google Drive not configured")
             except Exception:
                 st.warning("✗ Google Drive not configured")
-
-            try:
-                active = get_active_source()
-                st.info(f"Active source: {active}")
-            except Exception:
-                st.error("No active notes source available")
 
 
 if __name__ == "__main__":
