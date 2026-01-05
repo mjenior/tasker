@@ -163,6 +163,22 @@ top_p: 1.0
 
 TaskTriage uses OAuth 2.0 to access your Google Drive, giving you full read/write access to your personal Google account without the limitations of service accounts.
 
+### ⚠️ Critical Setup Requirements
+
+Don't skip these or you'll get an OAuth error:
+
+1. **Register the redirect URI** in Google Cloud Console:
+   - Must be: `http://localhost:8501` (with port number)
+   - Add this in "OAuth client ID" → "Authorized redirect URIs"
+
+2. **Add yourself as a test user**:
+   - In "OAuth consent screen" → "Test users"
+   - Add your Google account email
+
+3. **Wait for Google to cache the settings**:
+   - Wait 3-5 minutes after configuring OAuth
+   - Then restart Streamlit and try again
+
 ### 1. Create a Google Cloud Project
 
 1. Head to the [Google Cloud Console](https://console.cloud.google.com/)
@@ -199,9 +215,15 @@ TaskTriage uses OAuth 2.0 to access your Google Drive, giving you full read/writ
 2. Click "Create Credentials" → "OAuth client ID"
 3. Select "Web application"
 4. Name: "TaskTriage Web Client"
-5. **Authorized redirect URIs**: Add `http://localhost:8501` (for local development)
+5. **Under "Authorized redirect URIs"**:
+   - Click "Add URI"
+   - Enter: `http://localhost:8501`
+   - **IMPORTANT**: This must match exactly (including the port number)
 6. Click "Create"
-7. **Save the Client ID and Client Secret** (you'll need these)
+7. **Copy and save**:
+   - Copy the **Client ID** (looks like: `xxx.apps.googleusercontent.com`)
+   - Copy the **Client Secret** (looks like: `GOCSPX-xxx`)
+   - You'll need these in the next step
 
 ### 5. Configure TaskTriage
 
@@ -244,6 +266,41 @@ LOCAL_OUTPUT_DIR=/path/to/your/output/local/directory
 - You can revoke access anytime at [Google Account Settings](https://myaccount.google.com/permissions)
 - Full read/write access to Google Drive (no storage quota limitations)
 - Can sync analysis files directly to Google Drive via the Sync button
+
+### Troubleshooting OAuth Setup
+
+#### Error: "You can't sign in to this app because it doesn't comply with Google's OAuth 2.0 policy"
+
+**Solution**: You need to register the redirect URI in Google Cloud Console:
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Select your TaskTriage project
+3. Go to "APIs & Services" → "Credentials"
+4. Find your "TaskTriage Web Client" OAuth credential
+5. Click on it to edit
+6. Under "Authorized redirect URIs", verify that `http://localhost:8501` is listed
+7. If not, click "Add URI" and add: `http://localhost:8501`
+8. Click "Save"
+9. Restart your Streamlit app and try signing in again
+
+**Note**: The redirect URI must include the exact port number (8501). If you're running Streamlit on a different port, update the URI accordingly (e.g., `http://localhost:8502`).
+
+#### Error: "redirect_uri parameter does not match"
+
+**Solution**: The redirect URI in the OAuth configuration doesn't match. Check:
+
+1. In Google Cloud Console, confirm the exact redirect URI registered (should be `http://localhost:8501`)
+2. Verify Streamlit is running on port 8501 (check the URL in your browser)
+3. If running on a different port, either:
+   - Change the port in Google Cloud Console to match, OR
+   - Modify the `redirect_uri` in `streamlit_app.py` line 703
+
+#### "Not authenticated" but can't sign in
+
+1. Ensure you're listed as a test user in the OAuth consent screen
+2. Wait a few minutes after configuring OAuth (Google caches settings)
+3. Try in an incognito/private browser window
+4. Clear your browser cache and cookies
 
 ### Google Drive Folder Structure
 
