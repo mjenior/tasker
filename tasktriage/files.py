@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from .config import get_active_source, get_all_input_directories, get_primary_input_directory
+from .gdrive import parse_filename_datetime
 from .image import extract_text_from_image, IMAGE_EXTENSIONS
 
 # Backward compatibility: USB_DIR references the primary input directory
@@ -58,29 +59,6 @@ def _extract_timestamp(filename: str) -> str | None:
     return None
 
 
-def _parse_filename_datetime(filename: str) -> datetime | None:
-    """Parse datetime from a notes filename.
-
-    Handles filenames with optional page identifiers.
-
-    Supported formats:
-        - YYYYMMDD_HHMMSS.ext (e.g., 20251225_073454.txt)
-        - YYYYMMDD_HHMMSS_Page_N.ext (e.g., 20251225_073454_Page_1.png)
-
-    Args:
-        filename: Filename with timestamp prefix
-
-    Returns:
-        Parsed datetime, or None if parsing fails
-    """
-    timestamp = _extract_timestamp(filename)
-    if not timestamp:
-        return None
-
-    try:
-        return datetime.strptime(timestamp, "%Y%m%d_%H%M%S")
-    except ValueError:
-        return None
 
 
 # =============================================================================
@@ -178,7 +156,7 @@ def _load_task_notes_usb(notes_type: str = "daily", file_preference: str = "png"
             # Include file if: no analysis exists OR file was modified after analysis
             if not analysis_path.exists() or _needs_reanalysis_usb(notes_path, analysis_path):
                 # Parse datetime from the extracted timestamp
-                file_date = _parse_filename_datetime(notes_path.name)
+                file_date = parse_filename_datetime(notes_path.name)
                 if not file_date:
                     continue
 
@@ -258,7 +236,7 @@ def _load_all_unanalyzed_task_notes_usb(notes_type: str = "daily", file_preferen
             # Include file if: no analysis exists OR file was modified after analysis
             if not analysis_path.exists() or _needs_reanalysis_usb(notes_path, analysis_path):
                 # Parse datetime from the extracted timestamp
-                file_date = _parse_filename_datetime(notes_path.name)
+                file_date = parse_filename_datetime(notes_path.name)
                 if not file_date:
                     continue
 
@@ -1046,7 +1024,7 @@ def _find_weeks_needing_analysis() -> list[tuple[datetime, datetime]]:
         daily_dir = Path(USB_DIR) / "daily"
         if daily_dir.exists():
             for analysis_file in daily_dir.glob("*.daily_analysis.txt"):
-                file_date = _parse_filename_datetime(analysis_file.name)
+                file_date = parse_filename_datetime(analysis_file.name)
                 if file_date:
                     analysis_dates.append(file_date)
 
@@ -1343,7 +1321,7 @@ def _find_months_needing_analysis() -> list[tuple[datetime, datetime]]:
         weekly_dir = Path(USB_DIR) / "weekly"
         if weekly_dir.exists():
             for analysis_file in weekly_dir.glob("*.weekly_analysis.txt"):
-                file_date = _parse_filename_datetime(analysis_file.name)
+                file_date = parse_filename_datetime(analysis_file.name)
                 if file_date:
                     analysis_dates.append(file_date)
 

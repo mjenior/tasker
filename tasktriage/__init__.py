@@ -53,14 +53,11 @@ from .image import (
 
 # File operations
 from .files import (
-    load_task_notes,
     load_all_unanalyzed_task_notes,
-    collect_weekly_analyses,
     collect_weekly_analyses_for_week,
     collect_monthly_analyses_for_month,
     collect_annual_analyses_for_year,
     save_analysis,
-    get_notes_source,
     TEXT_EXTENSIONS,
     ALL_EXTENSIONS,
 )
@@ -84,15 +81,12 @@ __all__ = [
     "main",
     # Core functions
     "analyze_tasks",
-    "load_task_notes",
     "load_all_unanalyzed_task_notes",
-    "collect_weekly_analyses",
     "collect_weekly_analyses_for_week",
     "collect_monthly_analyses_for_month",
     "collect_annual_analyses_for_year",
     "save_analysis",
     "extract_text_from_image",
-    "get_notes_source",
     # Google Drive
     "GoogleDriveClient",
     "is_gdrive_configured",

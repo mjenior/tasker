@@ -10,12 +10,11 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from .analysis import analyze_tasks
+from .config import get_active_source
 from .files import (
     load_all_unanalyzed_task_notes,
-    collect_weekly_analyses,
     collect_weekly_analyses_for_week,
     save_analysis,
-    get_notes_source,
 )
 from .image import IMAGE_EXTENSIONS
 
@@ -65,7 +64,7 @@ def main():
 
     try:
         # Show which notes source is being used
-        source = get_notes_source()
+        source = get_active_source()
         source_label = "Google Drive" if source == "gdrive" else "USB/Local"
         print(f"Using notes source: {source_label}\n")
 

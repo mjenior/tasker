@@ -6,7 +6,6 @@ A professional, Canvas-style interface for the TaskTriage GTD-based task analysi
 
 
 import os
-import re
 import base64
 from pathlib import Path
 from datetime import datetime
@@ -24,7 +23,6 @@ from tasktriage import (
     collect_monthly_analyses_for_month,
     collect_annual_analyses_for_year,
     save_analysis,
-    get_notes_source,
     is_usb_available,
     is_local_input_available,
     is_gdrive_available,
@@ -35,6 +33,7 @@ from tasktriage import (
     IMAGE_EXTENSIONS,
     __version__,
 )
+from tasktriage.config import get_active_source
 from tasktriage.files import (
     _find_weeks_needing_analysis,
     _find_months_needing_analysis,
@@ -42,6 +41,7 @@ from tasktriage.files import (
     raw_text_exists,
     save_raw_text,
 )
+from tasktriage.gdrive import parse_filename_datetime
 
 # Page configuration
 st.set_page_config(
@@ -205,7 +205,7 @@ st.markdown("""
 def get_notes_directory() -> Path | None:
     """Get the primary notes directory path."""
     try:
-        source = get_notes_source()
+        source = get_active_source()
         if source == "usb":
             # Returns the primary input directory (USB_INPUT_DIR or LOCAL_INPUT_DIR)
             return get_primary_input_directory()
@@ -219,31 +219,6 @@ def get_notes_directory() -> Path | None:
     return None
 
 
-def parse_filename_datetime(filename: str) -> datetime | None:
-    """Parse datetime from filename format YYYYMMDD_HHMMSS."""
-    patterns = [
-        r"(\d{8}_\d{6})",  # YYYYMMDD_HHMMSS
-        r"(\d{8})",  # YYYYMMDD for weekly
-        r"(\d{6})",  # YYYYMM for monthly
-        r"(\d{4})",  # YYYY for annual
-    ]
-
-    for pattern in patterns:
-        match = re.search(pattern, filename)
-        if match:
-            ts = match.group(1)
-            try:
-                if len(ts) == 15:  # YYYYMMDD_HHMMSS
-                    return datetime.strptime(ts, "%Y%m%d_%H%M%S")
-                elif len(ts) == 8:  # YYYYMMDD
-                    return datetime.strptime(ts, "%Y%m%d")
-                elif len(ts) == 6:  # YYYYMM
-                    return datetime.strptime(ts, "%Y%m")
-                elif len(ts) == 4:  # YYYY
-                    return datetime.strptime(ts, "%Y")
-            except ValueError:
-                continue
-    return None
 
 
 def format_file_datetime(dt: datetime | None, filename: str) -> str:

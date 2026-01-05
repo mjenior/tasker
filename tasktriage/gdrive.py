@@ -7,6 +7,7 @@ as an alternative to the local USB directory.
 
 import io
 import os
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -270,9 +271,15 @@ def is_gdrive_configured() -> bool:
 
 
 def parse_filename_datetime(filename: str) -> datetime | None:
-    """Parse datetime from a notes filename.
+    """Parse datetime from filename in various formats.
 
-    Supports formats:
+    Supports:
+        - YYYYMMDD_HHMMSS (daily notes with timestamps)
+        - YYYYMMDD (weekly/analysis files)
+        - YYYYMM (monthly files)
+        - YYYY (annual files)
+
+    Handles variations like:
         - YYYYMMDD_HHMMSS.ext (e.g., 20251225_073454.txt)
         - YYYYMMDD_HHMMSS_Page_N.ext (e.g., 20251225_073454_Page_1.png)
         - YYYYMMDD_HHMMSS.daily_analysis.txt (analysis files)
@@ -283,21 +290,29 @@ def parse_filename_datetime(filename: str) -> datetime | None:
     Returns:
         Parsed datetime, or None if parsing fails
     """
-    try:
-        # Remove extension and parse
-        stem = Path(filename).stem
-        # Handle analysis files (e.g., 20251225_074353.daily_analysis)
-        if "." in stem:
-            stem = stem.split(".")[0]
+    patterns = [
+        r"(\d{8}_\d{6})",  # YYYYMMDD_HHMMSS
+        r"(\d{8})",  # YYYYMMDD for weekly
+        r"(\d{6})",  # YYYYMM for monthly
+        r"(\d{4})",  # YYYY for annual
+    ]
 
-        # Handle page identifiers (e.g., 20251225_073454_Page_1)
-        # Extract just the timestamp portion (first 15 chars: YYYYMMDD_HHMMSS)
-        if "_Page_" in stem:
-            stem = stem.split("_Page_")[0]
-
-        return datetime.strptime(stem, "%Y%m%d_%H%M%S")
-    except ValueError:
-        return None
+    for pattern in patterns:
+        match = re.search(pattern, filename)
+        if match:
+            ts = match.group(1)
+            try:
+                if len(ts) == 15:  # YYYYMMDD_HHMMSS
+                    return datetime.strptime(ts, "%Y%m%d_%H%M%S")
+                elif len(ts) == 8:  # YYYYMMDD
+                    return datetime.strptime(ts, "%Y%m%d")
+                elif len(ts) == 6:  # YYYYMM
+                    return datetime.strptime(ts, "%Y%m")
+                elif len(ts) == 4:  # YYYY
+                    return datetime.strptime(ts, "%Y")
+            except ValueError:
+                continue
+    return None
 
 
 def extract_timestamp_from_filename(filename: str) -> str | None:

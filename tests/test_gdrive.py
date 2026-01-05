@@ -390,13 +390,13 @@ class TestParseFilenameDatetime:
 
         assert result is None
 
-    def test_returns_none_for_partial_timestamp(self):
-        """Should return None for partial timestamp."""
+    def test_parses_YYYYMMDD_timestamp(self):
+        """Should parse YYYYMMDD format (for weekly/monthly analysis files)."""
         from tasktriage.gdrive import parse_filename_datetime
 
         result = parse_filename_datetime("20251231.txt")
 
-        assert result is None
+        assert result == datetime(2025, 12, 31, 0, 0)
 
 
 class TestExtractTimestampFromFilename:
