@@ -159,7 +159,7 @@ top_p: 1.0
 
 ## Google Drive Setup
 
-Alright, buckle up. Setting up Google Drive is... not simple. Google's service account setup is designed for enterprise deployments, not cute little task analysis tools. But it works, so here we go.
+TaskTriage uses OAuth 2.0 to access your Google Drive, giving you full read/write access to your personal Google account without the limitations of service accounts.
 
 ### 1. Create a Google Cloud Project
 
@@ -169,98 +169,79 @@ Alright, buckle up. Setting up Google Drive is... not simple. Google's service a
 
 ### 2. Enable the Google Drive API
 
-1. In your shiny new project, navigate to "APIs & Services" → "Library"
+1. In your project, navigate to "APIs & Services" → "Library"
 2. Search for "Google Drive API"
-3. Click on it and mash that "Enable" button
+3. Click on it and click the "Enable" button
 
-### 3. Create a Service Account
+### 3. Configure OAuth Consent Screen
 
-This is basically a robot user that will access your Drive for you.
+1. Go to "APIs & Services" → "OAuth consent screen"
+2. Select "External" user type (unless you have Google Workspace)
+3. Fill in application details:
+   - App name: "TaskTriage"
+   - User support email: your email
+   - Developer contact: your email
+4. Click "Save and Continue"
+5. **Add Scopes**:
+   - Click "Add or Remove Scopes"
+   - Search for "Google Drive API"
+   - Select: `https://www.googleapis.com/auth/drive`
+   - Click "Update" then "Save and Continue"
+6. **Add Test Users** (for development):
+   - Add your Google account email as a test user
+   - Click "Save and Continue"
+
+### 4. Create OAuth 2.0 Credentials
 
 1. Go to "APIs & Services" → "Credentials"
-2. Click "Create Credentials" → "Service account"
-3. Give it a name like "tasktriage-service-account" and click "Create"
-4. Skip the optional permission steps (you don't need them) and click "Done"
+2. Click "Create Credentials" → "OAuth client ID"
+3. Select "Web application"
+4. Name: "TaskTriage Web Client"
+5. **Authorized redirect URIs**: Add `http://localhost:8501` (for local development)
+6. Click "Create"
+7. **Save the Client ID and Client Secret** (you'll need these)
 
-### 4. Generate Service Account Key
-
-Now you need to download credentials for your robot:
-
-1. Click on the service account you just created
-2. Go to the "Keys" tab
-3. Click "Add Key" → "Create new key"
-4. Select "JSON" format and click "Create"
-5. Save the downloaded JSON file somewhere safe, like `~/.config/tasktriage/credentials.json`
-
-Don't lose this file. You can't re-download it.
-
-### 5. Set Up Your Google Drive Folder
-
-1. Create a folder in Google Drive for your notes (call it whatever you want, maybe "TaskTriageNotes")
-2. Inside that folder, create subfolders: `daily`, `weekly`, `monthly`, and `annual`
-3. **Here's the critical part**: Share the parent folder with your service account
-   - Right-click the folder → "Share"
-   - Add the service account email (it's in the JSON file you downloaded, labeled `client_email`—looks like `name@project-id.iam.gserviceaccount.com`)
-   - Give it "Editor" access
-
-If you skip step 3, nothing will work and you'll spend an hour debugging permissions. Ask me how I know.
-
-### 6. Get the Folder ID
-
-1. Open your notes folder in Google Drive
-2. Look at the URL: `https://drive.google.com/drive/folders/FOLDER_ID_HERE`
-3. Copy the folder ID from the URL
-
-### 7. Configure Environment Variables
+### 5. Configure TaskTriage
 
 Add these to your `.env` file:
 
 ```bash
-# Path to your service account credentials JSON file
-GOOGLE_CREDENTIALS_PATH=/path/to/credentials.json
+# OAuth 2.0 credentials from Google Cloud Console
+GOOGLE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_OAUTH_CLIENT_SECRET=your-client-secret
 
 # Google Drive folder ID
 GOOGLE_DRIVE_FOLDER_ID=your-folder-id-here
 
-# Local directory to save analysis output (REQUIRED for service accounts)
-# Service accounts don't have storage quota to upload files to Google Drive,
-# so analysis files must be saved locally
-LOCAL_OUTPUT_DIR=/path/to/analysis/output
-
-# Optional: Force Google Drive as the source
-NOTES_SOURCE=gdrive
+# Local directory to save analysis output (always required)
+LOCAL_OUTPUT_DIR=/path/to/your/output/local/directory
 ```
 
-### 8. Create the Output Directory
+### 6. Set Up Your Google Drive Folder
 
-After you've configured your `.env` file, run this to create the output directory structure:
+1. Create a folder in Google Drive for your notes (e.g., "TaskTriageNotes")
+2. Inside that folder, create subfolders: `daily`, `weekly`, `monthly`, `annual`
+3. Get the folder ID from the URL: `https://drive.google.com/drive/folders/FOLDER_ID_HERE`
+4. Add the folder ID to your `.env` file
 
-```bash
-task setup:output-dir
-```
+### 7. First-Time Authentication
 
-This creates the `daily/`, `weekly/`, `monthly/`, and `annual/` subdirectories inside your `LOCAL_OUTPUT_DIR`.
+1. Launch TaskTriage UI: `task ui`
+2. Open the "Configuration" expander
+3. Under "Google Drive (OAuth 2.0)", you'll see "Not authenticated"
+4. Enter your OAuth Client ID and Client Secret
+5. Click "🔐 Sign in with Google"
+6. Follow the OAuth flow in your browser
+7. Grant permissions to TaskTriage
+8. You'll be redirected back to Streamlit with "Authenticated with Google Drive"
 
-### Important: Service Account Limitations
+### 8. Important Notes
 
-Here's the annoying part: Google Drive service accounts **can't upload files** because they don't have storage quota. I know, it's weird. So TaskTriage uses a hybrid approach:
-
-- **Reads** notes from Google Drive (works fine with service accounts)
-- **Saves** analysis files locally to `LOCAL_OUTPUT_DIR` (because uploading doesn't work)
-
-This is why `LOCAL_OUTPUT_DIR` is required when using Google Drive. Your analyzed tasks don't go back to the cloud—they stay on your machine.
-
-**What about the Sync button?**
-
-When you click the Sync button with a service account:
-- ✅ Analysis files are synced to USB and Local directories (if configured)
-- ❌ Google Drive sync is skipped with an informational message explaining the limitation
-- All files remain backed up in `LOCAL_OUTPUT_DIR` and are available in your local/USB input directories
-
-**To upload to Google Drive**, you have two options:
-1. **OAuth Delegation**: Set up OAuth credentials instead of service accounts (more complex, but allows uploads)
-2. **Shared Drives**: Use a Google Workspace shared drive with service account access enabled (requires Workspace subscription)
-3. **Manual Upload**: Copy files from `LOCAL_OUTPUT_DIR` to your Google Drive folder manually via the web interface
+- OAuth tokens are stored encrypted in `~/.tasktriage/oauth_tokens.json`
+- Tokens automatically refresh when expired
+- You can revoke access anytime at [Google Account Settings](https://myaccount.google.com/permissions)
+- Full read/write access to Google Drive (no storage quota limitations)
+- Can sync analysis files directly to Google Drive via the Sync button
 
 ### Google Drive Folder Structure
 
@@ -291,6 +272,36 @@ LOCAL_OUTPUT_DIR/
 └── annual/
     └── 2025.annual_analysis.txt            # Generated annual analysis
 ```
+
+### Migrating from Service Account to OAuth 2.0
+
+If you've been using TaskTriage with a service account, you can easily migrate to OAuth 2.0:
+
+1. **Remove old service account configuration**:
+   - Remove `GOOGLE_CREDENTIALS_PATH` from your `.env` file
+   - You can delete or archive your service account JSON file (optional, but recommended)
+
+2. **Set up OAuth 2.0**:
+   - Follow the [Google Drive Setup](#google-drive-setup) instructions above
+   - Add `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` to `.env`
+   - Keep your existing `GOOGLE_DRIVE_FOLDER_ID` (it doesn't change)
+
+3. **Authenticate**:
+   - Launch Streamlit UI: `task ui`
+   - Click "🔐 Sign in with Google" in the Configuration section
+   - Grant permissions to TaskTriage
+
+4. **Verify**:
+   - Check that "Authenticated with Google Drive" shows in Configuration
+   - Try the Sync button to upload analysis files to Google Drive
+   - All files remain in `LOCAL_OUTPUT_DIR` as before
+
+**What changes**:
+- ✅ Authentication method (service account → OAuth 2.0)
+- ✅ Can now upload files to Google Drive
+- ❌ No change to folder structure
+- ❌ No change to analysis functionality
+- ❌ `LOCAL_OUTPUT_DIR` still required (used for initial output generation)
 
 ## Notes Directory Structure
 
