@@ -34,12 +34,11 @@ from tasktriage import (
     __version__,
 )
 from tasktriage.config import get_active_source
+from tasktriage.cli import analyze_single_file
 from tasktriage.files import (
     _find_weeks_needing_analysis,
     _find_months_needing_analysis,
     _find_years_needing_analysis,
-    raw_text_exists,
-    save_raw_text,
 )
 from tasktriage.gdrive import parse_filename_datetime
 
@@ -383,30 +382,6 @@ def save_yaml_config(config: dict) -> bool:
         return False
 
 
-def analyze_single_file(task_notes: str, notes_path: Path, file_date: datetime, notes_type: str) -> tuple:
-    """Analyze a single task notes file.
-
-    For PNG files, also saves the raw extracted text to a .raw_notes.txt file
-    in parallel with the analysis. This preserves the original text with any
-    completion markers (✓, ✗, ☆) for display in the UI text editor.
-    """
-    try:
-        # If this is a PNG file, save the raw extracted text (if not already saved)
-        # This runs in parallel with the analysis - text is already extracted
-        raw_text_path = None
-        if notes_path.suffix.lower() in IMAGE_EXTENSIONS:
-            if not raw_text_exists(notes_path):
-                raw_text_path = save_raw_text(task_notes, notes_path)
-
-        # Run the analysis
-        prompt_vars = {
-            "current_date": file_date.strftime("%A, %B %d, %Y"),
-        }
-        result = analyze_tasks(notes_type, task_notes, **prompt_vars)
-        output_path = save_analysis(result, notes_path, notes_type)
-        return (notes_path, output_path, True, None, raw_text_path)
-    except Exception as e:
-        return (notes_path, None, False, str(e), None)
 
 
 def run_triage_pipeline(progress_callback) -> dict:
@@ -433,7 +408,7 @@ def run_triage_pipeline(progress_callback) -> dict:
         with ThreadPoolExecutor(max_workers=5) as executor:
             future_to_file = {
                 executor.submit(
-                    analyze_single_file, task_notes, notes_path, file_date, "daily"
+                    analyze_single_file, task_notes, notes_path, file_date, "daily", True
                 ): notes_path
                 for task_notes, notes_path, file_date in unanalyzed_files
             }

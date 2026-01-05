@@ -15,11 +15,13 @@ from .files import (
     load_all_unanalyzed_task_notes,
     collect_weekly_analyses_for_week,
     save_analysis,
+    raw_text_exists,
+    save_raw_text,
 )
 from .image import IMAGE_EXTENSIONS
 
 
-def analyze_single_file(task_notes: str, notes_path, file_date, notes_type: str) -> tuple:
+def analyze_single_file(task_notes: str, notes_path, file_date, notes_type: str, save_raw_text_file: bool = False) -> tuple:
     """Analyze a single task notes file.
 
     Args:
@@ -27,11 +29,19 @@ def analyze_single_file(task_notes: str, notes_path, file_date, notes_type: str)
         notes_path: Path to the notes file
         file_date: Date parsed from filename
         notes_type: Type of analysis (daily/weekly)
+        save_raw_text_file: If True, save raw extracted text for image files
 
     Returns:
-        Tuple of (notes_path, output_path, success, error_message)
+        Tuple of (notes_path, output_path, success, error_message, raw_text_path)
+        where raw_text_path is None if not saved or not applicable
     """
     try:
+        # If this is a PNG file and requested, save the raw extracted text
+        raw_text_path = None
+        if save_raw_text_file and notes_path.suffix.lower() in IMAGE_EXTENSIONS:
+            if not raw_text_exists(notes_path):
+                raw_text_path = save_raw_text(task_notes, notes_path)
+
         # Format date for the prompt
         prompt_vars = {
             "current_date": file_date.strftime("%A, %B %d, %Y"),
@@ -39,9 +49,9 @@ def analyze_single_file(task_notes: str, notes_path, file_date, notes_type: str)
 
         result = analyze_tasks(notes_type, task_notes, **prompt_vars)
         output_path = save_analysis(result, notes_path, notes_type)
-        return (notes_path, output_path, True, None)
+        return (notes_path, output_path, True, None, raw_text_path)
     except Exception as e:
-        return (notes_path, None, False, str(e))
+        return (notes_path, None, False, str(e), None)
 
 
 def main():
@@ -95,7 +105,7 @@ def main():
 
             # Process results as they complete
             for future in as_completed(future_to_file):
-                notes_path, output_path, success, error_msg = future.result()
+                notes_path, output_path, success, error_msg, _ = future.result()
 
                 # Indicate if text was extracted from an image
                 if notes_path.suffix.lower() in IMAGE_EXTENSIONS:
