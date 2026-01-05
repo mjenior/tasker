@@ -250,6 +250,18 @@ Here's the annoying part: Google Drive service accounts **can't upload files** b
 
 This is why `LOCAL_OUTPUT_DIR` is required when using Google Drive. Your analyzed tasks don't go back to the cloud—they stay on your machine.
 
+**What about the Sync button?**
+
+When you click the Sync button with a service account:
+- ✅ Analysis files are synced to USB and Local directories (if configured)
+- ❌ Google Drive sync is skipped with an informational message explaining the limitation
+- All files remain backed up in `LOCAL_OUTPUT_DIR` and are available in your local/USB input directories
+
+**To upload to Google Drive**, you have two options:
+1. **OAuth Delegation**: Set up OAuth credentials instead of service accounts (more complex, but allows uploads)
+2. **Shared Drives**: Use a Google Workspace shared drive with service account access enabled (requires Workspace subscription)
+3. **Manual Upload**: Copy files from `LOCAL_OUTPUT_DIR` to your Google Drive folder manually via the web interface
+
 ### Google Drive Folder Structure
 
 Your Google Drive folder should look like this (notes only, no analysis files):

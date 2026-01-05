@@ -679,24 +679,35 @@ def sync_files_across_directories(output_dir: Path, progress_callback=None) -> d
     # Try to sync to Google Drive if available
     if is_gdrive_available():
         try:
-            from tasktriage.gdrive import GoogleDriveClient
+            from tasktriage.gdrive import GoogleDriveClient, is_service_account
 
-            client = GoogleDriveClient()
+            # Check if using a service account (cannot upload due to storage quota)
+            if is_service_account():
+                info_msg = (
+                    "Google Drive sync skipped: Service accounts cannot upload files due to "
+                    "storage quota limitations. Files are saved in LOCAL_OUTPUT_DIR. "
+                    "Consider using OAuth delegation or shared drives for Google Drive uploads."
+                )
+                stats["errors"].append(info_msg)
+                if progress_callback:
+                    progress_callback(info_msg)
+            else:
+                client = GoogleDriveClient()
 
-            for file_path in files_to_sync:
-                subdir_name = file_path.parent.name
-                file_content = file_path.read_text()
+                for file_path in files_to_sync:
+                    subdir_name = file_path.parent.name
+                    file_content = file_path.read_text()
 
-                try:
-                    client.upload_file(subdir_name, file_path.name, file_content)
-                    stats["synced"] += 1
-                    if progress_callback:
-                        progress_callback(f"Synced to GDrive: {file_path.name}")
-                except Exception as e:
-                    error_msg = f"Failed to sync {file_path.name} to Google Drive: {str(e)}"
-                    stats["errors"].append(error_msg)
-                    if progress_callback:
-                        progress_callback(f"GDrive error: {file_path.name}")
+                    try:
+                        client.upload_file(subdir_name, file_path.name, file_content)
+                        stats["synced"] += 1
+                        if progress_callback:
+                            progress_callback(f"Synced to GDrive: {file_path.name}")
+                    except Exception as e:
+                        error_msg = f"Failed to sync {file_path.name} to Google Drive: {str(e)}"
+                        stats["errors"].append(error_msg)
+                        if progress_callback:
+                            progress_callback(f"GDrive error: {file_path.name}")
 
         except Exception as e:
             error_msg = f"Google Drive sync failed: {str(e)}"

@@ -263,6 +263,35 @@ class GoogleDriveClient:
         return file.get("id")
 
 
+def is_service_account(credentials_path: str | None = None) -> bool:
+    """Check if Google Drive credentials are using a service account.
+
+    Service accounts have storage limitations and cannot upload files.
+
+    Args:
+        credentials_path: Path to credentials JSON file. Falls back to GOOGLE_CREDENTIALS_PATH env var.
+
+    Returns:
+        True if using a service account, False otherwise.
+    """
+    import json
+
+    creds_path = credentials_path or os.getenv("GOOGLE_CREDENTIALS_PATH")
+    if not creds_path:
+        return False
+
+    try:
+        creds_file = Path(creds_path)
+        if not creds_file.exists():
+            return False
+
+        with open(creds_file) as f:
+            creds = json.load(f)
+        return creds.get("type") == "service_account"
+    except Exception:
+        return False
+
+
 def is_gdrive_configured() -> bool:
     """Check if Google Drive integration is configured.
 

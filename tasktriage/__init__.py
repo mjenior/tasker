@@ -68,6 +68,7 @@ from .files import (
 from .gdrive import (
     GoogleDriveClient,
     is_gdrive_configured,
+    is_service_account,
 )
 
 # Core analysis
@@ -95,6 +96,7 @@ __all__ = [
     # Google Drive
     "GoogleDriveClient",
     "is_gdrive_configured",
+    "is_service_account",
     # Configuration
     "fetch_api_key",
     "load_model_config",
