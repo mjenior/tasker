@@ -10,7 +10,7 @@ You know that feeling when you write a great handwritten to-do list and then... 
 
 ## Overview
 
-Here's the deal: you write your tasks on a note-taking device (reMarkable, Supernote, etc.). Those notes get synced to either a mounted drive or Google Drive. TaskTriage then swoops in, finds your latest scribbles, and uses Claude AI (via LangChain) to do four things:
+You might have this feeling too: you write your tasks on a note-taking device (reMarkable, Supernote, etc.). Those notes get synced to either a mounted drive or Google Drive. TaskTriage then swoops in, finds your latest scribbles, and uses Claude AI (via LangChain) to do four things:
 
 - **Daily Analysis**: Takes your categorized to-do list and transforms it into an actual realistic plan for a single day. You get time estimates, energy levels, and prioritized action steps. No more pretending you can do 47 things in one afternoon.
 - **Weekly Analysis**: Looks back at your week's worth of daily plans to spot patterns, figure out where things went sideways, and generate strategies to fix your planning approach. It's like a retrospective, but with less corporate speak.
