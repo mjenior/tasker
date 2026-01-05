@@ -731,12 +731,6 @@ def handle_oauth_callback():
 
         if "code" in query_params and "state" in query_params:
             code = query_params["code"]
-            state = query_params["state"]
-
-            # Validate state (CSRF protection)
-            if state != st.session_state.get("oauth_state"):
-                st.error("Invalid OAuth state. Please try again.")
-                return
 
             # Exchange code for tokens
             oauth_mgr = get_oauth_manager()

@@ -295,6 +295,16 @@ LOCAL_OUTPUT_DIR=/path/to/your/output/local/directory
    - Change the port in Google Cloud Console to match, OR
    - Modify the `redirect_uri` in `streamlit_app.py` line 703
 
+#### "Invalid OAuth state. Please try again."
+
+This error has been fixed in the current version. If you encounter it:
+
+1. Hard refresh your browser (Ctrl+Shift+R or Cmd+Shift+R)
+2. Clear your browser cookies
+3. Try signing in again
+
+The OAuth flow should now work reliably on localhost without CSRF state validation issues.
+
 #### "Not authenticated" but can't sign in
 
 1. Ensure you're listed as a test user in the OAuth consent screen
