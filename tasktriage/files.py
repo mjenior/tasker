@@ -329,29 +329,6 @@ def _collect_weekly_analyses_usb_for_week(week_start: datetime, week_end: dateti
     return combined_text, output_path, week_start, week_end
 
 
-def _collect_weekly_analyses_usb() -> tuple[str, Path, datetime, datetime]:
-    """Collect weekly analyses from USB/local directory for previous work week.
-
-    Returns:
-        Tuple of (combined analysis text, output path, week start, week end)
-    """
-    # Calculate previous work week's date range (Monday to Friday)
-    today = datetime.now()
-
-    # Get current week's Monday
-    days_since_monday = today.weekday()
-    current_monday = today - timedelta(days=days_since_monday)
-
-    # Previous week's Monday and Friday
-    last_monday = current_monday - timedelta(days=7)
-    last_friday = last_monday + timedelta(days=4)
-
-    week_start = last_monday.replace(hour=0, minute=0, second=0, microsecond=0)
-    week_end = last_friday.replace(hour=23, minute=59, second=59, microsecond=999999)
-
-    return _collect_weekly_analyses_usb_for_week(week_start, week_end)
-
-
 def _save_analysis_usb(analysis: str, input_path: Path, notes_type: str = "daily") -> Path:
     """Save analysis to USB/local directory.
 
@@ -723,29 +700,6 @@ def _collect_weekly_analyses_gdrive_for_week(week_start: datetime, week_end: dat
     return combined_text, virtual_path, week_start, week_end
 
 
-def _collect_weekly_analyses_gdrive() -> tuple[str, Path, datetime, datetime]:
-    """Collect weekly analyses from Google Drive for previous work week.
-
-    Returns:
-        Tuple of (combined analysis text, virtual output path, week start, week end)
-    """
-    # Calculate previous work week's date range (Monday to Friday)
-    today = datetime.now()
-
-    # Get current week's Monday
-    days_since_monday = today.weekday()
-    current_monday = today - timedelta(days=days_since_monday)
-
-    # Previous week's Monday and Friday
-    last_monday = current_monday - timedelta(days=7)
-    last_friday = last_monday + timedelta(days=4)
-
-    week_start = last_monday.replace(hour=0, minute=0, second=0, microsecond=0)
-    week_end = last_friday.replace(hour=23, minute=59, second=59, microsecond=999999)
-
-    return _collect_weekly_analyses_gdrive_for_week(week_start, week_end)
-
-
 def _save_analysis_gdrive(analysis: str, input_path: Path, notes_type: str = "daily") -> Path:
     """Save analysis when source is Google Drive.
 
@@ -1095,26 +1049,6 @@ def collect_weekly_analyses_for_week(week_start: datetime, week_end: datetime) -
         return _collect_weekly_analyses_gdrive_for_week(week_start, week_end)
     else:
         return _collect_weekly_analyses_usb_for_week(week_start, week_end)
-
-
-def collect_weekly_analyses() -> tuple[str, Path, datetime, datetime]:
-    """Collect all daily analysis files from the previous work week (Monday-Friday).
-
-    Automatically selects between USB and Google Drive based on configuration.
-
-    Returns:
-        Tuple of (combined analysis text, output path for weekly analysis,
-                  week start datetime (Monday), week end datetime (Friday))
-
-    Raises:
-        FileNotFoundError: If directories don't exist or no analyses found for the week
-    """
-    source = get_active_source()
-
-    if source == "gdrive":
-        return _collect_weekly_analyses_gdrive()
-    else:
-        return _collect_weekly_analyses_usb()
 
 
 # =============================================================================
@@ -1679,10 +1613,3 @@ def save_raw_text(raw_text: str, input_path: Path) -> Path:
         return _save_raw_text_usb(raw_text, input_path)
 
 
-def get_notes_source() -> str:
-    """Get the currently active notes source.
-
-    Returns:
-        "usb" or "gdrive" indicating which source is being used
-    """
-    return get_active_source()
