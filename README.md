@@ -275,36 +275,6 @@ LOCAL_OUTPUT_DIR/
     └── 2025.annual_analysis.txt            # Generated annual analysis
 ```
 
-### Migrating from Service Account to OAuth 2.0
-
-If you've been using TaskTriage with a service account, you can easily migrate to OAuth 2.0:
-
-1. **Remove old service account configuration**:
-   - Remove `GOOGLE_CREDENTIALS_PATH` from your `.env` file
-   - You can delete or archive your service account JSON file (optional, but recommended)
-
-2. **Set up OAuth 2.0**:
-   - Follow the [Google Drive Setup](#google-drive-setup) instructions above
-   - Add `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` to `.env`
-   - Keep your existing `GOOGLE_DRIVE_FOLDER_ID` (it doesn't change)
-
-3. **Authenticate**:
-   - Launch Streamlit UI: `task ui`
-   - Click "🔐 Sign in with Google" in the Configuration section
-   - Grant permissions to TaskTriage
-
-4. **Verify**:
-   - Check that "Authenticated with Google Drive" shows in Configuration
-   - Try the Sync button to upload analysis files to Google Drive
-   - All files remain in `LOCAL_OUTPUT_DIR` as before
-
-**What changes**:
-- ✅ Authentication method (service account → OAuth 2.0)
-- ✅ Can now upload files to Google Drive
-- ❌ No change to folder structure
-- ❌ No change to analysis functionality
-- ❌ `LOCAL_OUTPUT_DIR` still required (used for initial output generation)
-
 ## Notes Directory Structure
 
 Whether you're using External/USB or Google Drive, TaskTriage expects this structure:
