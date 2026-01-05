@@ -567,7 +567,11 @@ def select_file(file_path: Path):
 
 
 def sync_files_across_directories(output_dir: Path, progress_callback=None) -> dict:
-    """Sync all analysis files and raw notes from output directory to all configured input directories.
+    """Sync files bidirectionally between output directory and all configured input directories.
+
+    This performs a true sync operation:
+    1. Copies analysis files and raw notes from output directory to all input directories
+    2. Copies new files from input directories to output directory
 
     Args:
         output_dir: The output directory where files are currently saved
@@ -586,30 +590,27 @@ def sync_files_across_directories(output_dir: Path, progress_callback=None) -> d
             progress_callback("Output directory not found")
         return stats
 
+    # Phase 1: Sync FROM output directory TO input directories and Google Drive
     # Get all files to sync (analysis files and raw notes)
-    files_to_sync = []
+    files_from_output = []
     for subdir in ["daily", "weekly", "monthly", "annual"]:
         subdir_path = output_dir / subdir
         if subdir_path.exists():
             # Get analysis files
-            files_to_sync.extend(subdir_path.glob("*.daily_analysis.txt"))
-            files_to_sync.extend(subdir_path.glob("*.weekly_analysis.txt"))
-            files_to_sync.extend(subdir_path.glob("*.monthly_analysis.txt"))
-            files_to_sync.extend(subdir_path.glob("*.annual_analysis.txt"))
+            files_from_output.extend(subdir_path.glob("*.daily_analysis.txt"))
+            files_from_output.extend(subdir_path.glob("*.weekly_analysis.txt"))
+            files_from_output.extend(subdir_path.glob("*.monthly_analysis.txt"))
+            files_from_output.extend(subdir_path.glob("*.annual_analysis.txt"))
             # Get raw notes files
-            files_to_sync.extend(subdir_path.glob("*.raw_notes.txt"))
-
-    stats["total"] = len(files_to_sync)
-
-    if stats["total"] == 0:
-        if progress_callback:
-            progress_callback("No files to sync")
-        return stats
+            files_from_output.extend(subdir_path.glob("*.raw_notes.txt"))
 
     # Sync to all configured input directories
     input_dirs = get_all_input_directories()
 
-    for file_path in files_to_sync:
+    if progress_callback:
+        progress_callback("Syncing output files to input directories...")
+
+    for file_path in files_from_output:
         # Determine which subdirectory this file belongs to
         subdir_name = file_path.parent.name  # "daily", "weekly", etc.
 
@@ -634,7 +635,57 @@ def sync_files_across_directories(output_dir: Path, progress_callback=None) -> d
                 if progress_callback:
                     progress_callback(f"Error: {file_path.name}")
 
-    # Try to sync to Google Drive if available
+    # Phase 2: Sync FROM input directories TO output directory
+    # Copy any new files from input directories that don't exist in output
+    if progress_callback:
+        progress_callback("Syncing new files from input directories...")
+
+    files_copied_from_input = set()
+
+    for input_dir in input_dirs:
+        for subdir in ["daily", "weekly", "monthly", "annual"]:
+            input_subdir = input_dir / subdir
+            if not input_subdir.exists():
+                continue
+
+            # Find all files in this input subdirectory
+            for file_path in input_subdir.iterdir():
+                if not file_path.is_file():
+                    continue
+
+                output_subdir = output_dir / subdir
+                output_file_path = output_subdir / file_path.name
+
+                # Skip if file already exists in output directory
+                if output_file_path.exists():
+                    continue
+
+                # Skip if we already copied this file (from another input directory)
+                file_key = (subdir, file_path.name)
+                if file_key in files_copied_from_input:
+                    continue
+
+                try:
+                    # Create output subdirectory if it doesn't exist
+                    output_subdir.mkdir(parents=True, exist_ok=True)
+
+                    # Copy file from input to output
+                    copy2(file_path, output_file_path)
+                    stats["synced"] += 1
+                    files_copied_from_input.add(file_key)
+
+                    if progress_callback:
+                        progress_callback(f"Synced from input: {file_path.name}")
+
+                except Exception as e:
+                    error_msg = f"Failed to sync {file_path.name} from {input_dir}: {str(e)}"
+                    stats["errors"].append(error_msg)
+                    if progress_callback:
+                        progress_callback(f"Error copying from input: {file_path.name}")
+
+    stats["total"] = stats["synced"]
+
+    # Phase 3: Try to sync to Google Drive if available
     if is_gdrive_available():
         try:
             from tasktriage.gdrive import GoogleDriveClient
@@ -652,7 +703,10 @@ def sync_files_across_directories(output_dir: Path, progress_callback=None) -> d
                 # Create client with OAuth credentials
                 client = GoogleDriveClient(credentials=credentials)
 
-                for file_path in files_to_sync:
+                if progress_callback:
+                    progress_callback("Syncing to Google Drive...")
+
+                for file_path in files_from_output:
                     subdir_name = file_path.parent.name
                     file_content = file_path.read_text()
 
@@ -678,7 +732,7 @@ HELP_TEXT = """TaskTriage uses Claude AI to turn your handwritten task notes int
 
 **Left Panel (Controls)**
 - **Analyze Button** - Run the full analysis pipeline with real-time progress updates
-- **Sync Button** - Saves current filew library to all currently configured directories
+- **Sync Button** - Bidirectionally sync files: copies analysis files to all input directories and copies new files from input directories to output directory
 - **Configuration** - Edit `.env` and `config.yaml` settings directly in the browser (API keys, notes source, model parameters)
 - **Raw Notes List** - Browse `.txt` and image files from your `daily/` directory, sorted by date
 - **Analysis Files List** - Browse all generated analysis files across daily/weekly/monthly/annual

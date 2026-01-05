@@ -434,10 +434,11 @@ The UI opens in your browser at `http://localhost:8501` and provides:
 
 **Left Panel (Controls)**
 - **Triage Button** - Run the full analysis pipeline with real-time progress updates
-- **Sync Button** - Distribute all analysis files and raw notes from the output directory to all configured input directories (External/USB, Local, Google Drive)
-  - Copies analysis files (`.daily_analysis.txt`, `.weekly_analysis.txt`, etc.) and extracted raw notes (`.raw_notes.txt`) to all input directories
-  - Provides real-time progress updates and error reporting
-  - Useful for syncing generated analyses back to your note-taking device or backup locations
+- **Sync Button** - Bidirectionally sync files between output and input directories
+  - **Outbound Sync**: Copies all analysis files (`.daily_analysis.txt`, `.weekly_analysis.txt`, etc.) and extracted raw notes (`.raw_notes.txt`) from output directory to all configured input directories (External/USB, Local, Google Drive)
+  - **Inbound Sync**: Copies any new files from input directories to the output directory that don't already exist there
+  - Provides real-time progress updates and comprehensive error reporting
+  - Useful for keeping all your locations in sync and consolidating notes from multiple sources
 - **Configuration** - Edit `.env` and `config.yaml` settings directly in the browser (API keys, notes source, model parameters)
 - **Raw Notes List** - Browse `.txt` and image files from your `daily/` directory, sorted by date
   - **Open** - Load a selected note file for editing
@@ -463,21 +464,30 @@ All new analysis files and extracted raw notes are initially saved to `LOCAL_OUT
 - It provides a centralized location for all generated analyses
 - It serves as a backup location for your analysis history
 
-**Stage 2: Distribution (Sync)**
-Once analyses are generated, you can use the **Sync button** in the web UI to distribute these files to all your configured input directories:
+**Stage 2: Bidirectional Sync**
+Once analyses are generated, you can use the **Sync button** in the web UI to perform true bidirectional synchronization between your output directory and all configured input directories:
 
-1. **To External/Local Directories**: Files are copied via standard file operations
+**Outbound Sync** (Output → Input directories):
+1. **To External/Local Directories**: Analysis files and raw notes are copied via standard file operations
 2. **To Google Drive**: Files are uploaded to your configured Google Drive folder
 3. **Real-time Progress**: The UI shows live progress updates and reports any errors
 
-This workflow ensures that:
+**Inbound Sync** (Input directories → Output):
+1. **Consolidation**: Any new files found in your input directories are copied to the output directory
+2. **Deduplication**: Files that already exist in the output directory are skipped
+3. **Multi-source support**: If the same file exists in multiple input directories, it's only copied once
+
+This bidirectional workflow ensures that:
 - Your analyses are always backed up in `LOCAL_OUTPUT_DIR`
 - Your note-taking device (USB/Supernote/reMarkable) stays synchronized with the latest analyses
 - Google Drive users can upload analyses manually or on-demand rather than being limited by service account quota constraints
+- New files added to any input location are automatically consolidated into your central output directory
+- You have a true sync experience rather than one-directional file distribution
 
 **When to Use Sync:**
 - After running the Triage analysis to distribute results to your devices
-- Periodically to ensure your backup locations stay in sync
+- Periodically to ensure all your locations (USB, local, Google Drive) stay in sync
+- To consolidate notes from multiple input sources into your central output directory
 - To upload analyses to Google Drive when you have multiple outputs accumulated
 
 ### What Happens When You Run It
