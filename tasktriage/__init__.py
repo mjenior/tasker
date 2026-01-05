@@ -69,7 +69,6 @@ from .files import (
 from .gdrive import (
     GoogleDriveClient,
     is_gdrive_configured,
-    is_service_account,
 )
 
 # Core analysis
