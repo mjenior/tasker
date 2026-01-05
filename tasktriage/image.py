@@ -14,14 +14,22 @@ from .config import fetch_api_key, load_model_config, DEFAULT_MODEL
 from .prompts import IMAGE_EXTRACTION_PROMPT
 
 # Supported image file extensions
-IMAGE_EXTENSIONS = {".png"}
+IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 
 # Mapping of file extensions to MIME types
-MEDIA_TYPE_MAP = {".png": "image/png"}
+MEDIA_TYPE_MAP = {
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+}
 
 
 def extract_text_from_image(image_path: Path, api_key: str | None = None) -> str:
     """Extract text from an image of handwritten notes using Claude's vision API.
+
+    Supports: PNG, JPEG, GIF, and WebP formats.
 
     Args:
         image_path: Path to the image file
@@ -29,6 +37,9 @@ def extract_text_from_image(image_path: Path, api_key: str | None = None) -> str
 
     Returns:
         Extracted text content from the image
+
+    Raises:
+        ValueError: If the image format is not supported
     """
     config = load_model_config()
 
@@ -47,7 +58,12 @@ def extract_text_from_image(image_path: Path, api_key: str | None = None) -> str
 
     # Determine media type based on file extension
     suffix = image_path.suffix.lower()
-    media_type = MEDIA_TYPE_MAP.get(suffix, "image/png")
+    media_type = MEDIA_TYPE_MAP.get(suffix)
+    if not media_type:
+        raise ValueError(
+            f"Unsupported image format: {suffix}. "
+            f"Supported formats: {', '.join(sorted(IMAGE_EXTENSIONS))}"
+        )
 
     # Create message with image content
     message = HumanMessage(

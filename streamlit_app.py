@@ -27,7 +27,7 @@ from tasktriage import (
     is_local_input_available,
     is_gdrive_available,
     get_primary_input_directory,
-    USB_INPUT_DIR,
+    EXTERNAL_INPUT_DIR,
     LOCAL_INPUT_DIR,
     CONFIG_PATH,
     IMAGE_EXTENSIONS,
@@ -206,7 +206,7 @@ def get_notes_directory() -> Path | None:
     try:
         source = get_active_source()
         if source == "usb":
-            # Returns the primary input directory (USB_INPUT_DIR or LOCAL_INPUT_DIR)
+            # Returns the primary input directory (EXTERNAL_INPUT_DIR or LOCAL_INPUT_DIR)
             return get_primary_input_directory()
         elif source == "gdrive":
             # For Google Drive, we need LOCAL_OUTPUT_DIR or return None
@@ -856,9 +856,9 @@ def main():
 
             st.markdown("**Input Directories**")
 
-            usb_input_dir = st.text_input(
-                "USB_INPUT_DIR",
-                value=env_config.get("USB_INPUT_DIR", env_config.get("USB_DIR", "")),  # Backward compat
+            external_input_dir = st.text_input(
+                "EXTERNAL_INPUT_DIR",
+                value=env_config.get("EXTERNAL_INPUT_DIR", env_config.get("USB_DIR", "")),  # Backward compat
                 help="Path to USB/mounted device notes directory"
             )
 
@@ -965,7 +965,7 @@ def main():
                     # Save env config
                     new_env = {
                         "ANTHROPIC_API_KEY": api_key,
-                        "USB_INPUT_DIR": usb_input_dir,
+                        "EXTERNAL_INPUT_DIR": external_input_dir,
                         "LOCAL_INPUT_DIR": local_input_dir,
                         "GOOGLE_OAUTH_CLIENT_ID": env_config.get("GOOGLE_OAUTH_CLIENT_ID", ""),
                         "GOOGLE_OAUTH_CLIENT_SECRET": env_config.get("GOOGLE_OAUTH_CLIENT_SECRET", ""),
@@ -1178,7 +1178,7 @@ def main():
 
             try:
                 if is_usb_available():
-                    st.success(f"✓ USB Input: {USB_INPUT_DIR}")
+                    st.success(f"✓ USB Input: {EXTERNAL_INPUT_DIR}")
                 else:
                     st.warning("✗ USB Input not found")
             except Exception:

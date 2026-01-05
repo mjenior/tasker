@@ -13,7 +13,7 @@ __version__ = "0.2.0"
 from .config import (
     fetch_api_key,
     load_model_config,
-    USB_INPUT_DIR,
+    EXTERNAL_INPUT_DIR,
     LOCAL_INPUT_DIR,
     CONFIG_PATH,
     DEFAULT_MODEL,
@@ -93,7 +93,7 @@ __all__ = [
     # Configuration
     "fetch_api_key",
     "load_model_config",
-    "USB_INPUT_DIR",
+    "EXTERNAL_INPUT_DIR",
     "LOCAL_INPUT_DIR",
     "CONFIG_PATH",
     "DEFAULT_MODEL",

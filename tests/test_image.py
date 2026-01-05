@@ -18,6 +18,20 @@ class TestImageExtensions:
 
         assert ".png" in IMAGE_EXTENSIONS
 
+    def test_image_extensions_contains_jpeg_formats(self):
+        """Should include JPEG extensions (.jpg and .jpeg)."""
+        from tasktriage.image import IMAGE_EXTENSIONS
+
+        assert ".jpg" in IMAGE_EXTENSIONS
+        assert ".jpeg" in IMAGE_EXTENSIONS
+
+    def test_image_extensions_contains_gif_and_webp(self):
+        """Should include GIF and WebP extensions."""
+        from tasktriage.image import IMAGE_EXTENSIONS
+
+        assert ".gif" in IMAGE_EXTENSIONS
+        assert ".webp" in IMAGE_EXTENSIONS
+
     def test_image_extensions_is_set(self):
         """IMAGE_EXTENSIONS should be a set for efficient lookups."""
         from tasktriage.image import IMAGE_EXTENSIONS
@@ -34,6 +48,24 @@ class TestMediaTypeMap:
 
         assert ".png" in MEDIA_TYPE_MAP
         assert MEDIA_TYPE_MAP[".png"] == "image/png"
+
+    def test_media_type_map_contains_jpeg_formats(self):
+        """Should map JPEG extensions to image/jpeg."""
+        from tasktriage.image import MEDIA_TYPE_MAP
+
+        assert ".jpg" in MEDIA_TYPE_MAP
+        assert MEDIA_TYPE_MAP[".jpg"] == "image/jpeg"
+        assert ".jpeg" in MEDIA_TYPE_MAP
+        assert MEDIA_TYPE_MAP[".jpeg"] == "image/jpeg"
+
+    def test_media_type_map_contains_gif_and_webp(self):
+        """Should map GIF and WebP extensions."""
+        from tasktriage.image import MEDIA_TYPE_MAP
+
+        assert ".gif" in MEDIA_TYPE_MAP
+        assert MEDIA_TYPE_MAP[".gif"] == "image/gif"
+        assert ".webp" in MEDIA_TYPE_MAP
+        assert MEDIA_TYPE_MAP[".webp"] == "image/webp"
 
 
 class TestExtractTextFromImage:
@@ -183,3 +215,33 @@ Home
             # Result should match the mock response content
             assert "Work" in result
             assert "Home" in result
+
+    def test_raises_on_unsupported_format(self, temp_dir):
+        """Should raise ValueError for unsupported image formats."""
+        # Create a file with unsupported extension
+        unsupported_file = temp_dir / "test_notes.bmp"
+        unsupported_file.write_bytes(b"fake image data")
+
+        with patch("tasktriage.image.fetch_api_key", return_value="test-key"), \
+             patch("tasktriage.image.load_model_config", return_value={}):
+            from tasktriage.image import extract_text_from_image
+
+            with pytest.raises(ValueError, match="Unsupported image format"):
+                extract_text_from_image(unsupported_file)
+
+    def test_error_message_lists_supported_formats(self, temp_dir):
+        """Error message should list supported image formats."""
+        unsupported_file = temp_dir / "test_notes.tiff"
+        unsupported_file.write_bytes(b"fake image data")
+
+        with patch("tasktriage.image.fetch_api_key", return_value="test-key"), \
+             patch("tasktriage.image.load_model_config", return_value={}):
+            from tasktriage.image import extract_text_from_image
+
+            with pytest.raises(ValueError) as exc_info:
+                extract_text_from_image(unsupported_file)
+
+            error_msg = str(exc_info.value)
+            assert "Supported formats:" in error_msg
+            assert ".png" in error_msg
+            assert ".jpg" in error_msg

@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 # Input directories for notes (can have multiple sources)
-USB_INPUT_DIR = os.getenv("USB_INPUT_DIR")  # USB/mounted device directory
+EXTERNAL_INPUT_DIR = os.getenv("EXTERNAL_INPUT_DIR")  # USB/mounted device directory
 LOCAL_INPUT_DIR = os.getenv("LOCAL_INPUT_DIR")  # Local hard drive directory
 
 # Google Drive configuration (OAuth 2.0)
@@ -27,14 +27,14 @@ GOOGLE_DRIVE_FOLDER_ID = os.getenv("GOOGLE_DRIVE_FOLDER_ID")
 LOCAL_OUTPUT_DIR = os.getenv("LOCAL_OUTPUT_DIR")
 
 # Backward compatibility: support old USB_DIR variable name
-if not USB_INPUT_DIR and os.getenv("USB_DIR"):
-    USB_INPUT_DIR = os.getenv("USB_DIR")
+if not EXTERNAL_INPUT_DIR and os.getenv("USB_DIR"):
+    EXTERNAL_INPUT_DIR = os.getenv("USB_DIR")
 
 # Validate that at least one source is configured
-if not USB_INPUT_DIR and not LOCAL_INPUT_DIR and not (GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET and GOOGLE_DRIVE_FOLDER_ID):
+if not EXTERNAL_INPUT_DIR and not LOCAL_INPUT_DIR and not (GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET and GOOGLE_DRIVE_FOLDER_ID):
     raise ValueError(
         "No notes source configured. Please set at least one of:\n"
-        "  - USB_INPUT_DIR for USB/mounted device directory\n"
+        "  - EXTERNAL_INPUT_DIR for USB/mounted device directory\n"
         "  - LOCAL_INPUT_DIR for local hard drive directory\n"
         "  - GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET, and GOOGLE_DRIVE_FOLDER_ID for Google Drive\n"
         "in your .env file."
@@ -107,11 +107,11 @@ def is_usb_available() -> bool:
     """Check if USB input directory is configured and accessible.
 
     Returns:
-        True if USB_INPUT_DIR is set and the directory exists
+        True if EXTERNAL_INPUT_DIR is set and the directory exists
     """
-    if not USB_INPUT_DIR:
+    if not EXTERNAL_INPUT_DIR:
         return False
-    return Path(USB_INPUT_DIR).exists()
+    return Path(EXTERNAL_INPUT_DIR).exists()
 
 
 def is_local_input_available() -> bool:
@@ -134,7 +134,7 @@ def get_all_input_directories() -> list[Path]:
     dirs = []
 
     if is_usb_available():
-        dirs.append(Path(USB_INPUT_DIR))
+        dirs.append(Path(EXTERNAL_INPUT_DIR))
 
     if is_local_input_available():
         dirs.append(Path(LOCAL_INPUT_DIR))
@@ -162,14 +162,14 @@ def get_primary_input_directory() -> Path:
     """
     # Prefer USB, then local input
     if is_usb_available():
-        return Path(USB_INPUT_DIR)
+        return Path(EXTERNAL_INPUT_DIR)
 
     if is_local_input_available():
         return Path(LOCAL_INPUT_DIR)
 
     raise ValueError(
         "No local input directory available for creating new files. "
-        "Please configure USB_INPUT_DIR or LOCAL_INPUT_DIR."
+        "Please configure EXTERNAL_INPUT_DIR or LOCAL_INPUT_DIR."
     )
 
 
@@ -188,7 +188,7 @@ def get_active_source() -> str:
     """
     if NOTES_SOURCE == "usb":
         if not is_usb_available():
-            raise ValueError("USB source requested but USB_INPUT_DIR is not available")
+            raise ValueError("USB source requested but EXTERNAL_INPUT_DIR is not available")
         return "usb"
 
     if NOTES_SOURCE == "gdrive":
@@ -207,6 +207,6 @@ def get_active_source() -> str:
         return "gdrive"
 
     raise ValueError(
-        "No notes source available. Check that USB_INPUT_DIR or LOCAL_INPUT_DIR exists or "
+        "No notes source available. Check that EXTERNAL_INPUT_DIR or LOCAL_INPUT_DIR exists or "
         "Google Drive credentials are properly configured."
     )

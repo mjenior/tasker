@@ -101,7 +101,7 @@ def _needs_reanalysis_usb(notes_path: Path, analysis_path: Path) -> bool:
 def _load_task_notes_usb(notes_type: str = "daily", file_preference: str = "png") -> tuple[str, Path, datetime]:
     """Load task notes from all configured local input directories.
 
-    Checks all available input directories (USB_INPUT_DIR, LOCAL_INPUT_DIR)
+    Checks all available input directories (EXTERNAL_INPUT_DIR, LOCAL_INPUT_DIR)
     and returns the first unanalyzed file found.
 
     Args:
@@ -176,7 +176,7 @@ def _load_task_notes_usb(notes_type: str = "daily", file_preference: str = "png"
 def _load_all_unanalyzed_task_notes_usb(notes_type: str = "daily", file_preference: str = "png") -> list[tuple[str, Path, datetime]]:
     """Load all unanalyzed task notes from all configured local input directories.
 
-    Checks all available input directories (USB_INPUT_DIR, LOCAL_INPUT_DIR)
+    Checks all available input directories (EXTERNAL_INPUT_DIR, LOCAL_INPUT_DIR)
     and collects unique unanalyzed files. Deduplicates by timestamp to avoid
     processing the same logical file from multiple locations.
 

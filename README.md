@@ -10,7 +10,7 @@ You know that feeling when you write a great handwritten to-do list and then... 
 
 ## Overview
 
-You might have this feeling too: you write your tasks on a note-taking device (reMarkable, Supernote, etc.). Those notes get synced to either a mounted drive or Google Drive. TaskTriage then swoops in, finds your latest scribbles, and uses Claude AI (via LangChain) to do four things:
+You might have this feeling too: You write a semi-disorganized list(s) of daily tasks by hand or in some digital format to keep you on track everyday. For extra safety, maybe those notes get synced to either a mounted drive or Google Drive, but that's kind of where it ends. You end up maybe just prioritizing wrong and then have a pile of old notebooks with important information on a shelf collecting dust. Well, TaskTriage is here to then swoop in, find your latest scribbles, and uses Claude AI (via LangChain) to do four things:
 
 - **Daily Analysis**: Takes your categorized to-do list and transforms it into an actual realistic plan for a single day. You get time estimates, energy levels, and prioritized action steps. No more pretending you can do 47 things in one afternoon.
 - **Weekly Analysis**: Looks back at your week's worth of daily plans to spot patterns, figure out where things went sideways, and generate strategies to fix your planning approach. It's like a retrospective, but with less corporate speak.
@@ -33,6 +33,8 @@ You might have this feeling too: you write your tasks on a note-taking device (r
 - Auto-triggers annual analyses when you have 12 monthly analyses or when the calendar year has ended with at least 1 monthly analysis
 - Shell alias so you can just type `triage` instead of the full command
 - **Web Interface**: A Streamlit UI for browsing, editing, creating, and triaging your notes visually
+
+**Note:** Works especially well when paired with a note-taking device (reMarkable, Supernote, etc.). Since it works with images, you can even just take a photo of your handwritten notes and analyze that!
 
 <div align="center">
   <img src="./.images/ui.png" alt="Streamlit App">
@@ -95,7 +97,7 @@ If you're syncing notes to a USB drive or mounted device from your reMarkable or
 
 ```bash
 # Path to the mounted note-taking device directory
-USB_INPUT_DIR=/path/to/your/usb/notes/directory
+EXTERNAL_INPUT_DIR=/path/to/your/usb/notes/directory
 ```
 
 #### Option 2: Local Hard Drive Directory
@@ -113,7 +115,7 @@ If your notes live in Google Drive, check out the [Google Drive Setup](#google-d
 
 #### How Multi-Source Reading Works
 
-**TaskTriage automatically checks ALL configured input directories** when looking for notes files. If you have both `USB_INPUT_DIR` and `LOCAL_INPUT_DIR` configured, it will:
+**TaskTriage automatically checks ALL configured input directories** when looking for notes files. If you have both `EXTERNAL_INPUT_DIR` and `LOCAL_INPUT_DIR` configured, it will:
 - Search both directories for unanalyzed notes
 - Deduplicate files by timestamp (if the same timestamp appears in multiple locations, only the first one found is processed)
 - Collect unique notes from all sources for analysis
@@ -130,13 +132,13 @@ NOTES_SOURCE=auto
 ```
 
 In auto mode, new files created in the UI are saved to:
-1. `USB_INPUT_DIR` (if available)
+1. `EXTERNAL_INPUT_DIR` (if available)
 2. `LOCAL_INPUT_DIR` (if USB not available)
 3. Google Drive (if neither local directory is available)
 
 #### Backward Compatibility
 
-The old `USB_DIR` variable is still supported for backward compatibility. If you have existing configurations using `USB_DIR`, they will continue to work (it's treated as `USB_INPUT_DIR`).
+The old `USB_DIR` variable is still supported for backward compatibility. If you have existing configurations using `USB_DIR`, they will continue to work (it's treated as `EXTERNAL_INPUT_DIR`).
 
 ### Anthropic API Key
 
@@ -305,7 +307,7 @@ If you've been using TaskTriage with a service account, you can easily migrate t
 
 ## Notes Directory Structure
 
-Whether you're using USB or Google Drive, TaskTriage expects this structure:
+Whether you're using External/USB or Google Drive, TaskTriage expects this structure:
 
 ```
 notes/
@@ -395,7 +397,7 @@ The UI opens in your browser at `http://localhost:8501` and provides:
 
 **Left Panel (Controls)**
 - **Triage Button** - Run the full analysis pipeline with real-time progress updates
-- **Sync Button** - Distribute all analysis files and raw notes from the output directory to all configured input directories (USB, Local, Google Drive)
+- **Sync Button** - Distribute all analysis files and raw notes from the output directory to all configured input directories (External/USB, Local, Google Drive)
   - Copies analysis files (`.daily_analysis.txt`, `.weekly_analysis.txt`, etc.) and extracted raw notes (`.raw_notes.txt`) to all input directories
   - Provides real-time progress updates and error reporting
   - Useful for syncing generated analyses back to your note-taking device or backup locations
@@ -427,7 +429,7 @@ All new analysis files and extracted raw notes are initially saved to `LOCAL_OUT
 **Stage 2: Distribution (Sync)**
 Once analyses are generated, you can use the **Sync button** in the web UI to distribute these files to all your configured input directories:
 
-1. **To USB/Local Directories**: Files are copied via standard file operations
+1. **To External/Local Directories**: Files are copied via standard file operations
 2. **To Google Drive**: Files are uploaded to your configured Google Drive folder
 3. **Real-time Progress**: The UI shows live progress updates and reports any errors
 
@@ -680,7 +682,7 @@ tasktriage/
 │   ├── config.py      # Configuration and environment handling
 │   ├── prompts.py     # LangChain prompt templates
 │   ├── image.py       # Image text extraction
-│   ├── files.py       # File I/O operations (USB + Google Drive)
+│   ├── files.py       # File I/O operations (External + Google Drive)
 │   ├── gdrive.py      # Google Drive API integration
 │   ├── analysis.py    # Core analysis functionality
 │   └── cli.py         # Command-line interface
@@ -717,7 +719,7 @@ from tasktriage import (
 )
 
 # Check which source is being used
-print(f"Using: {get_notes_source()}")  # "usb" or "gdrive"
+print(f"Using: {get_notes_source()}")  # "external" or "gdrive"
 
 # Get prompt templates with dynamic variables
 daily_prompt = get_daily_prompt()
@@ -773,15 +775,15 @@ files = client.list_notes_files("daily")
 - Make sure they're in the correct subfolder (`daily/` or `weekly/`)
 - TaskTriage is looking for files that don't have a matching `.daily_analysis.txt` or `.weekly_analysis.txt` file
 
-### USB/Local Directory Issues
+### External/Local Directory Issues
 
 **"No input directories configured or available"**
-- Make sure at least one of `USB_INPUT_DIR` or `LOCAL_INPUT_DIR` is set in your `.env` file
+- Make sure at least one of `EXTERNAL_INPUT_DIR` or `LOCAL_INPUT_DIR` is set in your `.env` file
 - Verify the paths are correct and the directories actually exist
 
 **"USB directory not found"**
 - Is your USB device actually plugged in and mounted?
-- Check that the `USB_INPUT_DIR` path in your `.env` file is correct and points to the right location
+- Check that the `EXTERNAL_INPUT_DIR` path in your `.env` file is correct and points to the right location
 - The directory must contain `daily/`, `weekly/`, `monthly/`, and `annual/` subdirectories
 
 **"Local directory not found"**
