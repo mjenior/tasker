@@ -591,6 +591,14 @@ if "raw_notes_selection" not in st.session_state:
 if "analysis_files_selection" not in st.session_state:
     st.session_state.analysis_files_selection = None
 
+# OAuth session state
+if "oauth_authenticated" not in st.session_state:
+    st.session_state.oauth_authenticated = False
+if "oauth_state" not in st.session_state:
+    st.session_state.oauth_state = None
+if "oauth_credentials" not in st.session_state:
+    st.session_state.oauth_credentials = None
+
 
 def select_file(file_path: Path):
     """Handle file selection."""
@@ -679,20 +687,20 @@ def sync_files_across_directories(output_dir: Path, progress_callback=None) -> d
     # Try to sync to Google Drive if available
     if is_gdrive_available():
         try:
-            from tasktriage.gdrive import GoogleDriveClient, is_service_account
+            from tasktriage.gdrive import GoogleDriveClient
 
-            # Check if using a service account (cannot upload due to storage quota)
-            if is_service_account():
-                info_msg = (
-                    "Google Drive sync skipped: Service accounts cannot upload files due to "
-                    "storage quota limitations. Files are saved in LOCAL_OUTPUT_DIR. "
-                    "Consider using OAuth delegation or shared drives for Google Drive uploads."
-                )
+            # Get OAuth credentials
+            oauth_mgr = get_oauth_manager()
+            credentials = oauth_mgr.load_credentials()
+
+            if not credentials:
+                info_msg = "Google Drive sync skipped: Not authenticated. Please sign in with Google."
                 stats["errors"].append(info_msg)
                 if progress_callback:
                     progress_callback(info_msg)
             else:
-                client = GoogleDriveClient()
+                # Create client with OAuth credentials
+                client = GoogleDriveClient(credentials=credentials)
 
                 for file_path in files_to_sync:
                     subdir_name = file_path.parent.name
@@ -733,8 +741,88 @@ HELP_TEXT = """TaskTriage uses Claude AI to turn your handwritten task notes int
 - **Quick Markup Tools** - Add task markers to clipboard (✓ completed, ✗ removed, ☆ urgent). These are automatically interpretted at the right side of each line.
 """
 
+
+# OAuth 2.0 Helper Functions
+def get_oauth_manager():
+    """Get or create OAuth manager instance."""
+    import os
+    from tasktriage.oauth import OAuthManager
+
+    client_id = os.getenv("GOOGLE_OAUTH_CLIENT_ID")
+    client_secret = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
+    redirect_uri = "http://localhost:8501"
+
+    if not client_id or not client_secret:
+        raise ValueError("OAuth credentials not configured in .env")
+
+    return OAuthManager(client_id, client_secret, redirect_uri)
+
+
+def initiate_oauth_flow():
+    """Start OAuth authorization flow."""
+    import secrets
+
+    try:
+        oauth_mgr = get_oauth_manager()
+        state = secrets.token_urlsafe(32)
+        st.session_state.oauth_state = state
+
+        auth_url = oauth_mgr.get_authorization_url(state)
+        st.info(f"Please visit this URL to authorize TaskTriage:\n\n{auth_url}")
+        st.markdown(f"[Click here to authorize]({auth_url})")
+    except ValueError as e:
+        st.error(f"OAuth not configured: {e}")
+
+
+def handle_oauth_callback():
+    """Handle OAuth callback and exchange code for tokens."""
+    try:
+        query_params = st.query_params
+
+        if "code" in query_params and "state" in query_params:
+            code = query_params["code"]
+            state = query_params["state"]
+
+            # Validate state (CSRF protection)
+            if state != st.session_state.get("oauth_state"):
+                st.error("Invalid OAuth state. Please try again.")
+                return
+
+            # Exchange code for tokens
+            oauth_mgr = get_oauth_manager()
+
+            try:
+                credentials = oauth_mgr.exchange_code_for_tokens(code)
+                st.session_state.oauth_authenticated = True
+                st.session_state.oauth_credentials = credentials
+
+                st.query_params.clear()
+                st.success("✓ Successfully authenticated with Google Drive!")
+                st.rerun()
+
+            except Exception as e:
+                st.error(f"Authentication failed: {e}")
+                st.session_state.oauth_authenticated = False
+    except Exception as e:
+        # Silently handle errors in callback handling
+        pass
+
+
 def main():
     """Main application entry point."""
+    # Handle OAuth callback if present
+    handle_oauth_callback()
+
+    # Check if already authenticated from saved tokens
+    if not st.session_state.oauth_authenticated and is_gdrive_available():
+        try:
+            oauth_mgr = get_oauth_manager()
+            if oauth_mgr.is_authenticated():
+                st.session_state.oauth_authenticated = True
+                st.session_state.oauth_credentials = oauth_mgr.load_credentials()
+        except Exception:
+            pass  # OAuth not configured yet
+
     # Header
     st.markdown(f"# 📋 TaskTriage v{__version__}", help=HELP_TEXT)
 
@@ -830,11 +918,66 @@ def main():
                 help="Path to local hard drive notes directory (optional)"
             )
 
-            st.markdown("**Google Drive**")
+            st.markdown("**Google Drive (OAuth 2.0)**")
 
+            if st.session_state.oauth_authenticated:
+                st.success("✓ Authenticated with Google Drive")
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("🔄 Refresh Token", use_container_width=True):
+                        try:
+                            oauth_mgr = get_oauth_manager()
+                            creds = oauth_mgr.load_credentials()
+                            if creds:
+                                from google.auth.transport.requests import Request
+                                creds.refresh(Request())
+                                oauth_mgr.save_credentials(creds)
+                                st.success("Token refreshed!")
+                        except Exception as e:
+                            st.error(f"Token refresh failed: {e}")
+
+                with col2:
+                    if st.button("🚪 Sign Out", use_container_width=True):
+                        try:
+                            oauth_mgr = get_oauth_manager()
+                            oauth_mgr.clear_credentials()
+                            st.session_state.oauth_authenticated = False
+                            st.session_state.oauth_credentials = None
+                            st.success("Signed out!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Sign out failed: {e}")
+            else:
+                st.warning("⚠ Not authenticated with Google Drive")
+
+                client_id = st.text_input(
+                    "GOOGLE_OAUTH_CLIENT_ID",
+                    value=env_config.get("GOOGLE_OAUTH_CLIENT_ID", ""),
+                    help="OAuth 2.0 Client ID from Google Cloud Console"
+                )
+
+                client_secret = st.text_input(
+                    "GOOGLE_OAUTH_CLIENT_SECRET",
+                    value=env_config.get("GOOGLE_OAUTH_CLIENT_SECRET", ""),
+                    type="password",
+                    help="OAuth 2.0 Client Secret from Google Cloud Console"
+                )
+
+                if st.button("🔐 Sign in with Google", type="primary", use_container_width=True):
+                    if not client_id or not client_secret:
+                        st.error("Please configure OAuth client ID and secret first")
+                    else:
+                        env_config["GOOGLE_OAUTH_CLIENT_ID"] = client_id
+                        env_config["GOOGLE_OAUTH_CLIENT_SECRET"] = client_secret
+                        save_env_config(env_config)
+                        initiate_oauth_flow()
+
+            # Google Drive folder ID (always show this)
             gdrive_folder = st.text_input(
                 "GOOGLE_DRIVE_FOLDER_ID",
-                value=env_config.get("GOOGLE_DRIVE_FOLDER_ID", "")
+                value=env_config.get("GOOGLE_DRIVE_FOLDER_ID", ""),
+                help="Google Drive folder ID for your notes"
             )
 
             local_output = st.text_input(
@@ -875,6 +1018,8 @@ def main():
                         "NOTES_SOURCE": notes_source,
                         "USB_INPUT_DIR": usb_input_dir,
                         "LOCAL_INPUT_DIR": local_input_dir,
+                        "GOOGLE_OAUTH_CLIENT_ID": env_config.get("GOOGLE_OAUTH_CLIENT_ID", ""),
+                        "GOOGLE_OAUTH_CLIENT_SECRET": env_config.get("GOOGLE_OAUTH_CLIENT_SECRET", ""),
                         "GOOGLE_DRIVE_FOLDER_ID": gdrive_folder,
                         "LOCAL_OUTPUT_DIR": local_output,
                     }
