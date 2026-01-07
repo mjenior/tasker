@@ -11,7 +11,7 @@ from pathlib import Path
 
 from .config import get_active_source, get_all_input_directories, get_primary_input_directory
 from .gdrive import parse_filename_datetime
-from .image import extract_text_from_image, IMAGE_EXTENSIONS
+from .image import extract_text_from_image, extract_text_from_pdf, VISUAL_EXTENSIONS
 
 # Backward compatibility: USB_DIR references the primary input directory
 # This allows existing code to work while we transition to multi-source reading
@@ -27,8 +27,8 @@ USB_DIR = _get_usb_dir()
 # Supported text file extensions
 TEXT_EXTENSIONS = {".txt"}
 
-# All supported input file extensions
-ALL_EXTENSIONS = TEXT_EXTENSIONS | IMAGE_EXTENSIONS
+# All supported input file extensions (text + images + PDFs)
+ALL_EXTENSIONS = TEXT_EXTENSIONS | VISUAL_EXTENSIONS
 
 
 def _extract_timestamp(filename: str) -> str | None:
@@ -72,7 +72,7 @@ def _needs_reanalysis_usb(notes_path: Path, analysis_path: Path) -> bool:
     replacing the old one.
 
     Args:
-        notes_path: Path to the notes file (PNG or TXT)
+        notes_path: Path to the notes file (PNG, PDF, or TXT)
         analysis_path: Path to the existing analysis file
 
     Returns:
@@ -87,8 +87,8 @@ def _needs_reanalysis_usb(notes_path: Path, analysis_path: Path) -> bool:
     if notes_path.stat().st_mtime > analysis_mtime:
         return True
 
-    # For image files, also check if the corresponding .raw_notes.txt was edited
-    if notes_path.suffix.lower() in IMAGE_EXTENSIONS:
+    # For visual files (images and PDFs), also check if the corresponding .raw_notes.txt was edited
+    if notes_path.suffix.lower() in VISUAL_EXTENSIONS:
         timestamp = _extract_timestamp(notes_path.name)
         if timestamp:
             raw_notes_path = notes_path.parent / f"{timestamp}.raw_notes.txt"
@@ -161,8 +161,11 @@ def _load_task_notes_usb(notes_type: str = "daily", file_preference: str = "png"
                     continue
 
                 # Extract text based on file type
-                if notes_path.suffix.lower() in IMAGE_EXTENSIONS:
+                suffix = notes_path.suffix.lower()
+                if suffix in IMAGE_EXTENSIONS:
                     file_contents = extract_text_from_image(notes_path)
+                elif suffix in {".pdf"}:
+                    file_contents = extract_text_from_pdf(notes_path)
                 else:
                     file_contents = notes_path.read_text()
 
@@ -241,8 +244,11 @@ def _load_all_unanalyzed_task_notes_usb(notes_type: str = "daily", file_preferen
                     continue
 
                 # Extract text based on file type
-                if notes_path.suffix.lower() in IMAGE_EXTENSIONS:
+                suffix = notes_path.suffix.lower()
+                if suffix in IMAGE_EXTENSIONS:
                     file_contents = extract_text_from_image(notes_path)
+                elif suffix in {".pdf"}:
+                    file_contents = extract_text_from_pdf(notes_path)
                 else:
                     file_contents = notes_path.read_text()
 
@@ -467,6 +473,8 @@ def _load_task_notes_gdrive(notes_type: str = "daily", file_preference: str = "p
     from .gdrive import (
         GoogleDriveClient,
         IMAGE_MIME_TYPES,
+        PDF_MIME_TYPES,
+        VISUAL_MIME_TYPES,
         parse_filename_datetime,
         get_file_extension,
         extract_timestamp_from_filename,
@@ -489,8 +497,8 @@ def _load_task_notes_gdrive(notes_type: str = "daily", file_preference: str = "p
         if file_preference == "txt":
             if file_ext not in TEXT_EXTENSIONS:
                 continue
-        else:  # default to "png"
-            if file_ext not in IMAGE_EXTENSIONS:
+        else:  # default to "png" (includes both images and PDFs)
+            if file_ext not in VISUAL_EXTENSIONS:
                 continue
 
         # Parse datetime from filename
@@ -522,8 +530,8 @@ def _load_task_notes_gdrive(notes_type: str = "daily", file_preference: str = "p
             continue
 
         # Download and process the file
-        if mime_type in IMAGE_MIME_TYPES:
-            # Download image to temp file and extract text
+        if mime_type in VISUAL_MIME_TYPES:
+            # Download visual file (image or PDF) to temp file and extract text
             image_data = client.download_file(file_id)
             ext = get_file_extension(mime_type)
 
@@ -532,7 +540,10 @@ def _load_task_notes_gdrive(notes_type: str = "daily", file_preference: str = "p
                 tmp_path = Path(tmp.name)
 
             try:
-                file_contents = extract_text_from_image(tmp_path)
+                if mime_type in PDF_MIME_TYPES:
+                    file_contents = extract_text_from_pdf(tmp_path)
+                else:
+                    file_contents = extract_text_from_image(tmp_path)
             finally:
                 tmp_path.unlink()
         else:
@@ -563,6 +574,8 @@ def _load_all_unanalyzed_task_notes_gdrive(notes_type: str = "daily", file_prefe
     from .gdrive import (
         GoogleDriveClient,
         IMAGE_MIME_TYPES,
+        PDF_MIME_TYPES,
+        VISUAL_MIME_TYPES,
         parse_filename_datetime,
         get_file_extension,
         extract_timestamp_from_filename,
@@ -587,8 +600,8 @@ def _load_all_unanalyzed_task_notes_gdrive(notes_type: str = "daily", file_prefe
         if file_preference == "txt":
             if file_ext not in TEXT_EXTENSIONS:
                 continue
-        else:  # default to "png"
-            if file_ext not in IMAGE_EXTENSIONS:
+        else:  # default to "png" (includes both images and PDFs)
+            if file_ext not in VISUAL_EXTENSIONS:
                 continue
 
         # Parse datetime from filename
@@ -620,8 +633,8 @@ def _load_all_unanalyzed_task_notes_gdrive(notes_type: str = "daily", file_prefe
             continue
 
         # Download and process the file
-        if mime_type in IMAGE_MIME_TYPES:
-            # Download image to temp file and extract text
+        if mime_type in VISUAL_MIME_TYPES:
+            # Download visual file (image or PDF) to temp file and extract text
             image_data = client.download_file(file_id)
             ext = get_file_extension(mime_type)
 
@@ -630,7 +643,10 @@ def _load_all_unanalyzed_task_notes_gdrive(notes_type: str = "daily", file_prefe
                 tmp_path = Path(tmp.name)
 
             try:
-                file_contents = extract_text_from_image(tmp_path)
+                if mime_type in PDF_MIME_TYPES:
+                    file_contents = extract_text_from_pdf(tmp_path)
+                else:
+                    file_contents = extract_text_from_image(tmp_path)
             finally:
                 tmp_path.unlink()
         else:

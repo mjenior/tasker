@@ -20,9 +20,9 @@ You might have this feeling too: You write a semi-disorganized list(s) of daily 
 ## Features
 
 - Automatically finds ALL unanalyzed notes files and processes them in parallel (because who wants to manually track that?)
-- Handles both text files (.txt) and images (.png, .jpg, .jpeg, .gif, .webp)
-- Extracts text from your handwritten notes using Claude's vision API—yes, even your terrible handwriting
-- **Automatic raw text preservation**: When analyzing PNG notes, automatically saves the extracted text as `.raw_notes.txt` files for easy editing in the UI
+- Handles text files (.txt), images (.png, .jpg, .jpeg, .gif, .webp), and PDFs (.pdf)
+- Extracts text from your handwritten notes using Claude's vision API—yes, even your terrible handwriting (including multi-page PDFs)
+- **Automatic raw text preservation**: When analyzing PNG or PDF notes, automatically saves the extracted text as `.raw_notes.txt` files for easy editing in the UI
 - **Smart re-analysis**: Detects when notes files are edited after their initial analysis and automatically includes them for re-analysis, replacing old analyses
 - Works with local/USB directories or Google Drive (your choice)
 - Tweak Claude's model parameters via a simple YAML file
@@ -34,7 +34,7 @@ You might have this feeling too: You write a semi-disorganized list(s) of daily 
 - Shell alias so you can just type `triage` instead of the full command
 - **Web Interface**: A Streamlit UI for browsing, editing, creating, and triaging your notes visually
 
-**Note:** Works especially well when paired with a note-taking device (reMarkable, Supernote, etc.). Since it works with images, you can even just take a photo of your handwritten notes and analyze that!
+**Note:** Works especially well when paired with a note-taking device (reMarkable, Supernote, etc.). Since it works with images and PDFs, you can take a photo of your handwritten notes, scan documents, or export PDFs from your note-taking app and analyze those!
 
 <div align="center">
   <img src="./.images/ui.png" alt="Streamlit App">
@@ -352,8 +352,11 @@ notes/
 │   ├── 20251225_074353.txt              # Raw daily notes (text)
 │   ├── 20251226_083000.png              # Raw daily notes (image)
 │   ├── 20251226_083000.raw_notes.txt    # Extracted text from PNG (auto-generated, editable)
+│   ├── 20251227_095000.pdf              # Raw daily notes (PDF, single or multi-page)
+│   ├── 20251227_095000.raw_notes.txt    # Extracted text from PDF (auto-generated, editable)
 │   ├── 20251225_074353.daily_analysis.txt  # Generated analysis
 │   ├── 20251226_083000.daily_analysis.txt  # Generated analysis
+│   ├── 20251227_095000.daily_analysis.txt  # Generated analysis
 │   └── ...
 ├── weekly/
 │   ├── 20251223.weekly_analysis.txt     # Generated weekly analysis
@@ -369,9 +372,14 @@ notes/
 
 - **Text files**: `.txt`
 - **Image files**: `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`
-- **Raw text files**: `.raw_notes.txt` (auto-generated from image analysis, preserves completion markers)
+- **PDF files**: `.pdf` (single or multi-page documents)
+- **Raw text files**: `.raw_notes.txt` (auto-generated from image/PDF analysis, preserves completion markers)
 
-Image files get run through Claude's vision API to extract your handwritten text automatically. The extracted text is saved as a `.raw_notes.txt` file in parallel with the analysis, making it easy to edit the text directly in the UI if needed. If you edit a `.raw_notes.txt` file after its initial analysis, TaskTriage will detect the change and automatically re-analyze it on the next run.
+Image and PDF files get run through Claude's vision API to extract your handwritten text automatically:
+- **Image files** are processed directly as images
+- **PDF files** are converted to images page-by-page and each page is processed with the vision API, then the extracted text from all pages is concatenated
+
+The extracted text is saved as a `.raw_notes.txt` file in parallel with the analysis, making it easy to edit the text directly in the UI if needed. If you edit a `.raw_notes.txt` file after its initial analysis, TaskTriage will detect the change and automatically re-analyze it on the next run.
 
 ### Notes File Naming
 
@@ -496,11 +504,12 @@ TaskTriage follows a strict temporal hierarchy, ensuring each level completes be
 
 **LEVEL 1: Daily Analysis (runs automatically)**
 
-1. TaskTriage finds ALL unanalyzed `.txt` or image files in `Notes/daily/`
+1. TaskTriage finds ALL unanalyzed `.txt`, image, or PDF files in `Notes/daily/`
    - Includes files that have never been analyzed
    - **Smart re-analysis**: Also includes files that were edited after their last analysis (detects changes by comparing file modification times)
 2. Processes them in parallel (up to 5 concurrent API calls)
-3. For images, Claude's vision API extracts the text from your handwriting
+3. For images and PDFs, Claude's vision API extracts the text from your handwriting
+   - **PDF Processing**: Multi-page PDFs are converted to images page-by-page, each page is processed, then all text is concatenated with page separators
    - **Automatic preservation**: The extracted text is also saved as a `.raw_notes.txt` file for easy editing in the UI
 4. Each file gets analyzed and saved as `{filename}.daily_analysis.txt`
    - If re-analyzing an edited file, the new analysis **replaces** the old one (no duplicates)
@@ -606,7 +615,10 @@ Notes/
 │   ├── 20251225_074353.daily_analysis.txt     # Analysis output
 │   ├── 20251226_094500.png                    # Your daily task notes (image)
 │   ├── 20251226_094500.raw_notes.txt          # Extracted text from PNG (auto-generated)
-│   └── 20251226_094500.daily_analysis.txt     # Analysis output
+│   ├── 20251226_094500.daily_analysis.txt     # Analysis output
+│   ├── 20251227_120000.pdf                    # Your daily task notes (PDF)
+│   ├── 20251227_120000.raw_notes.txt          # Extracted text from PDF (auto-generated)
+│   └── 20251227_120000.daily_analysis.txt     # Analysis output
 ├── weekly/
 │   ├── 20251223.weekly_analysis.txt           # Week of Dec 23-27
 │   └── 20251230.weekly_analysis.txt           # Week of Dec 30-Jan 3
@@ -618,8 +630,8 @@ Notes/
 ```
 
 Filename formats:
-- **Daily notes**: `YYYYMMDD_HHMMSS.{txt|png|jpg|...}` (e.g., `20251225_074353.txt`)
-- **Raw text from images**: `YYYYMMDD_HHMMSS.raw_notes.txt` (auto-generated when analyzing PNG files)
+- **Daily notes**: `YYYYMMDD_HHMMSS.{txt|png|jpg|pdf|...}` (e.g., `20251225_074353.txt` or `20251225_074353.pdf`)
+- **Raw text from images/PDFs**: `YYYYMMDD_HHMMSS.raw_notes.txt` (auto-generated when analyzing image or PDF files)
 - **Daily analyses**: `YYYYMMDD_HHMMSS.daily_analysis.txt`
 - **Weekly analyses**: `YYYYMMDD.weekly_analysis.txt` (date is Monday of that week)
 - **Monthly analyses**: `YYYYMM.monthly_analysis.txt` (e.g., `202512.monthly_analysis.txt` for December 2025)
@@ -761,6 +773,7 @@ from tasktriage import (
     collect_monthly_analyses_for_month,
     collect_annual_analyses_for_year,
     extract_text_from_image,
+    extract_text_from_pdf,
     GoogleDriveClient,
     get_notes_source,
 )
@@ -847,8 +860,8 @@ files = client.list_notes_files("daily")
 
 **What files trigger re-analysis?**
 - `.txt` files that were modified after their `.daily_analysis.txt` was created
-- `.raw_notes.txt` files (extracted from PNGs) that were edited after their analysis
-- The original `.png` file itself if it was replaced with a newer version
+- `.raw_notes.txt` files (extracted from images or PDFs) that were edited after their analysis
+- The original image (`.png`, `.jpg`, etc.) or PDF (`.pdf`) file itself if it was replaced with a newer version
 
 **When does re-analysis NOT happen?**
 - If the notes file is older than its analysis file (no changes detected)

@@ -246,7 +246,7 @@ def list_raw_notes(notes_dir: Path) -> list[tuple[Path, str]]:
     if not daily_dir.exists():
         return files
 
-    valid_extensions = {".txt", ".png", ".jpg", ".jpeg", ".gif", ".webp"}
+    valid_extensions = {".txt", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf"}
 
     for f in daily_dir.iterdir():
         if f.is_file() and f.suffix.lower() in valid_extensions:
@@ -295,9 +295,12 @@ def list_analysis_files(notes_dir: Path) -> list[tuple[Path, str]]:
 
 def load_file_content(file_path: Path) -> str:
     """Load content from a file."""
-    if file_path.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp"}:
-        # For images, return a placeholder message
-        return f"[Image file: {file_path.name}]\n\nImage preview is shown below the editor."
+    if file_path.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf"}:
+        # For visual files (images and PDFs), return a placeholder message
+        if file_path.suffix.lower() == ".pdf":
+            return f"[PDF file: {file_path.name}]\n\nPDF content is processed and displayed below."
+        else:
+            return f"[Image file: {file_path.name}]\n\nImage preview is shown below the editor."
 
     try:
         return file_path.read_text(encoding="utf-8")
@@ -1149,7 +1152,7 @@ def main():
         if st.session_state.selected_file:
             file_path = st.session_state.selected_file
 
-            # Check if it's an image file
+            # Check if it's an image or PDF file
             if file_path.suffix.lower() in {".png", ".jpg", ".jpeg", ".gif", ".webp"}:
                 # Image files - show header without edit controls
                 st.markdown(f"### 📄 {file_path.name}")
@@ -1157,6 +1160,12 @@ def main():
                 st.markdown("---")
                 # Show image preview
                 render_image_preview(file_path)
+            elif file_path.suffix.lower() == ".pdf":
+                # PDF files - show header without edit controls
+                st.markdown(f"### 📄 {file_path.name}")
+                st.caption("PDF file (read-only)")
+                st.markdown("---")
+                st.info("PDF content is extracted and processed. View the extracted text in the analysis results.")
             else:
                 # Text files - show editor with controls
                 # Initialize content_editor in session state if needed

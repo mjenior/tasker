@@ -49,7 +49,10 @@ from .prompts import (
 # Image processing
 from .image import (
     extract_text_from_image,
+    extract_text_from_pdf,
     IMAGE_EXTENSIONS,
+    PDF_EXTENSIONS,
+    VISUAL_EXTENSIONS,
     MEDIA_TYPE_MAP,
 )
 
@@ -87,6 +90,7 @@ __all__ = [
     "collect_annual_analyses_for_year",
     "save_analysis",
     "extract_text_from_image",
+    "extract_text_from_pdf",
     # Google Drive
     "GoogleDriveClient",
     "is_gdrive_configured",
@@ -123,6 +127,8 @@ __all__ = [
     "IMAGE_EXTRACTION_PROMPT",
     # Constants
     "IMAGE_EXTENSIONS",
+    "PDF_EXTENSIONS",
+    "VISUAL_EXTENSIONS",
     "MEDIA_TYPE_MAP",
     "TEXT_EXTENSIONS",
     "ALL_EXTENSIONS",

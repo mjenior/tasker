@@ -22,12 +22,15 @@ SCOPES = ["https://www.googleapis.com/auth/drive"]
 # Supported MIME types for notes files
 TEXT_MIME_TYPES = {"text/plain"}
 IMAGE_MIME_TYPES = {"image/png"}
-ALL_MIME_TYPES = TEXT_MIME_TYPES | IMAGE_MIME_TYPES
+PDF_MIME_TYPES = {"application/pdf"}
+VISUAL_MIME_TYPES = IMAGE_MIME_TYPES | PDF_MIME_TYPES
+ALL_MIME_TYPES = TEXT_MIME_TYPES | VISUAL_MIME_TYPES
 
 # Map MIME types to file extensions
 MIME_TO_EXT = {
     "text/plain": ".txt",
     "image/png": ".png",
+    "application/pdf": ".pdf",
 }
 
 
