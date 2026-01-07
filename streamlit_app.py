@@ -815,19 +815,22 @@ def sync_files_across_directories(output_dir: Path, progress_callback=None) -> d
 
 HELP_TEXT = """TaskTriage uses Claude AI to turn your handwritten task notes into realistic, actionable execution plans based on GTD principles. Think of it as a reality check for your optimistic planning habits.
 
+**Recommended Workflow: Sync → Edit → Analyze**
+
 **Left Panel (Controls)**
-- **Analyze Button** - Run the full analysis pipeline with real-time progress updates
-- **Sync Button** - Full sync operation: (1) copies raw notes from input directories to output, (2) converts images/PDFs to editable text using Claude API, (3) syncs all files back to input directories
-- **Configuration** - Edit `.env` and `config.yaml` settings directly in the browser (API keys, notes source, model parameters)
-- **Raw Notes List** - Browse `.txt` and image files from your `daily/` directory, sorted by date
-- **Analysis Files List** - Browse all generated analysis files across daily/weekly/monthly/annual
+- **Sync Button** (run first!) - Copies raw notes from input directories, converts images/PDFs to editable `.raw_notes.txt` files, and syncs everything across all configured directories
+- **Analyze Button** - Generates daily analyses for synced files. Weekly/monthly/annual analyses auto-trigger when conditions are met
+- **Configuration** - Edit `.env` and `config.yaml` settings directly in the browser
+- **Raw Notes List** - Browse `.txt` and image files from your notes directory
+- **Analysis Files List** - Browse generated analysis files across daily/weekly/monthly/annual
 
 **Right Panel (Editor)**
-- Full-height text editor for viewing and editing selected files
+- Full-height text editor for viewing and editing files
 - Image preview for handwritten note images
 - Save/Revert buttons with unsaved changes indicator
-- Notes source status display
-- **Quick Markup Tools** - Add task markers to clipboard (✓ completed, ✗ removed, ☆ urgent). These are automatically interpretted at the right side of each line.
+- **Quick Markup Tools** - Add task markers (✓ completed, ✗ removed, ☆ urgent)
+
+**Note**: Image/PDF files must be synced first to create `.raw_notes.txt` files before they can be analyzed.
 """
 
 
@@ -925,9 +928,9 @@ def main():
         st.markdown('<p class="section-header">Actions</p>', unsafe_allow_html=True)
 
         triage_disabled = st.session_state.triage_running or notes_dir is None
-        if st.button("🔍 Analyze", type="primary", disabled=triage_disabled, 
+        if st.button("🔍 Analyze", type="primary", disabled=triage_disabled,
             use_container_width=True, key="btn_triage",
-            help="Perform any yet-to-be-done analyses"):
+            help="Analyze synced files. Image/PDF files require Sync first. Weekly/monthly/annual auto-trigger."):
             st.session_state.triage_running = True
             st.session_state.triage_progress = []
             st.rerun()
@@ -1251,6 +1254,7 @@ def main():
                 st.markdown(f"### 📄 {file_path.name}")
                 st.caption("Image file (read-only)")
                 st.markdown("---")
+                st.info("Run Sync to convert this image to an editable .raw_notes.txt file, then Analyze to generate the analysis.")
                 # Show image preview
                 render_image_preview(file_path)
             elif file_path.suffix.lower() == ".pdf":
@@ -1258,7 +1262,7 @@ def main():
                 st.markdown(f"### 📄 {file_path.name}")
                 st.caption("PDF file (read-only)")
                 st.markdown("---")
-                st.info("PDF content is extracted and processed. View the extracted text in the analysis results.")
+                st.info("Run Sync to convert this PDF to an editable .raw_notes.txt file, then Analyze to generate the analysis.")
             else:
                 # Text files - show editor with controls
                 # Initialize content_editor in session state if needed
@@ -1320,7 +1324,7 @@ def main():
         else:
             # No file selected
             st.markdown("### Select a file to edit")
-            st.info("Choose a file from the Raw Notes or Analysis Files list on the left to view and edit its content.")
+            st.info("Choose a file from the Raw Notes or Analysis Files list on the left to view and edit its content. For new image/PDF files, run Sync first to convert them to editable text.")
 
             # Show notes source status
             st.markdown("---")
