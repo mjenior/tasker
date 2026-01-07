@@ -7,7 +7,7 @@ actionable execution plans based on GTD principles.
 Supports reading notes from both local/USB directories and Google Drive.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 # Configuration
 from .config import (
