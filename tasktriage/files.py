@@ -123,11 +123,15 @@ def _load_task_notes_usb(notes_type: str = "daily", file_preference: str = "png"
     if file_preference == "txt":
         search_extensions = TEXT_EXTENSIONS
     else:  # default to "png"
-        search_extensions = IMAGE_EXTENSIONS
+        search_extensions = VISUAL_EXTENSIONS
 
     # Try each input directory
     for base_dir in input_dirs:
-        notes_dir = base_dir / notes_type
+        # Raw notes are at the top level, analysis files are in subdirectories
+        if notes_type == "daily":
+            notes_dir = base_dir
+        else:
+            notes_dir = base_dir / notes_type
 
         if not notes_dir.exists():
             continue  # Skip this directory if it doesn't exist
@@ -162,7 +166,7 @@ def _load_task_notes_usb(notes_type: str = "daily", file_preference: str = "png"
 
                 # Extract text based on file type
                 suffix = notes_path.suffix.lower()
-                if suffix in IMAGE_EXTENSIONS:
+                if suffix in VISUAL_EXTENSIONS:
                     file_contents = extract_text_from_image(notes_path)
                 elif suffix in {".pdf"}:
                     file_contents = extract_text_from_pdf(notes_path)
@@ -199,14 +203,18 @@ def _load_all_unanalyzed_task_notes_usb(notes_type: str = "daily", file_preferen
     if file_preference == "txt":
         search_extensions = TEXT_EXTENSIONS
     else:  # default to "png"
-        search_extensions = IMAGE_EXTENSIONS
+        search_extensions = VISUAL_EXTENSIONS
 
     unanalyzed_files = []
     seen_timestamps = set()  # Track timestamps to avoid duplicates
 
     # Check each input directory
     for base_dir in input_dirs:
-        notes_dir = base_dir / notes_type
+        # Raw notes are at the top level, analysis files are in subdirectories
+        if notes_type == "daily":
+            notes_dir = base_dir
+        else:
+            notes_dir = base_dir / notes_type
 
         if not notes_dir.exists():
             continue  # Skip this directory if it doesn't exist
@@ -245,7 +253,7 @@ def _load_all_unanalyzed_task_notes_usb(notes_type: str = "daily", file_preferen
 
                 # Extract text based on file type
                 suffix = notes_path.suffix.lower()
-                if suffix in IMAGE_EXTENSIONS:
+                if suffix in VISUAL_EXTENSIONS:
                     file_contents = extract_text_from_image(notes_path)
                 elif suffix in {".pdf"}:
                     file_contents = extract_text_from_pdf(notes_path)
@@ -353,7 +361,15 @@ def _save_analysis_usb(analysis: str, input_path: Path, notes_type: str = "daily
     else:
         # Fallback to full stem if timestamp extraction fails
         output_filename = f"{input_path.stem}.{notes_type}_analysis.txt"
-    output_path = input_path.parent / output_filename
+
+    # Determine output directory based on analysis type
+    # Raw notes are at top level, but analyses go to subdirectories
+    output_dir = input_path.parent
+    if notes_type in ["daily", "weekly", "monthly", "annual"]:
+        output_dir = input_path.parent / notes_type
+        output_dir.mkdir(exist_ok=True)
+
+    output_path = output_dir / output_filename
 
     header = f"{notes_type.capitalize()} Task Analysis"
     formatted_output = f"{header}\n{'=' * 40}\n\n{analysis}\n"
@@ -383,6 +399,8 @@ def _raw_text_exists_usb(input_path: Path) -> bool:
 def _save_raw_text_usb(raw_text: str, input_path: Path) -> Path:
     """Save raw extracted text to USB/local directory.
 
+    Raw text files are saved at the top level alongside the original notes files.
+
     Args:
         raw_text: The raw extracted text content
         input_path: Path to the original notes file (PNG)
@@ -397,6 +415,8 @@ def _save_raw_text_usb(raw_text: str, input_path: Path) -> Path:
     else:
         # Fallback to full stem if timestamp extraction fails
         output_filename = f"{input_path.stem}.raw_notes.txt"
+
+    # Save at the same level as the input file (top level for raw notes)
     output_path = input_path.parent / output_filename
 
     output_path.write_text(raw_text)
@@ -751,11 +771,8 @@ def _save_analysis_gdrive(analysis: str, input_path: Path, notes_type: str = "da
     header = f"{notes_type.capitalize()} Task Analysis"
     formatted_output = f"{header}\n{'=' * 40}\n\n{analysis}\n"
 
-    # Determine target folder from path
-    if "weekly" in str(input_path):
-        subfolder = "weekly"
-    else:
-        subfolder = "daily"
+    # Determine target folder based on analysis type
+    subfolder = notes_type if notes_type in ["daily", "weekly", "monthly", "annual"] else "daily"
 
     # If local output directory is configured, save there instead of GDrive
     # (Service accounts don't have storage quota for uploads)
@@ -798,7 +815,8 @@ def _raw_text_exists_gdrive(input_path: Path) -> bool:
 
     # Check local output directory first (when LOCAL_OUTPUT_DIR is set)
     if LOCAL_OUTPUT_DIR:
-        raw_path = Path(LOCAL_OUTPUT_DIR) / "daily" / raw_filename
+        # Raw notes are stored at the top level
+        raw_path = Path(LOCAL_OUTPUT_DIR) / raw_filename
         if raw_path.exists():
             return True
 
@@ -806,7 +824,7 @@ def _raw_text_exists_gdrive(input_path: Path) -> bool:
     if not LOCAL_OUTPUT_DIR:
         from .gdrive import GoogleDriveClient
         client = GoogleDriveClient()
-        return client.file_exists("daily", raw_filename)
+        return client.file_exists("raw_notes", raw_filename)
 
     return False
 
@@ -839,7 +857,8 @@ def _save_raw_text_gdrive(raw_text: str, input_path: Path) -> Path:
 
     # If local output directory is configured, save there
     if LOCAL_OUTPUT_DIR:
-        output_dir = Path(LOCAL_OUTPUT_DIR) / "daily"
+        # Raw notes are stored at the top level
+        output_dir = Path(LOCAL_OUTPUT_DIR)
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / output_filename
         output_path.write_text(raw_text)
@@ -848,9 +867,9 @@ def _save_raw_text_gdrive(raw_text: str, input_path: Path) -> Path:
     # Otherwise, attempt to upload to Google Drive
     from .gdrive import GoogleDriveClient
     client = GoogleDriveClient()
-    client.upload_file("daily", output_filename, raw_text)
+    client.upload_file("raw_notes", output_filename, raw_text)
 
-    return Path(f"gdrive://daily/{output_filename}")
+    return Path(f"gdrive://raw_notes/{output_filename}")
 
 
 # =============================================================================

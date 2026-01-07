@@ -239,19 +239,21 @@ def format_file_datetime(dt: datetime | None, filename: str) -> str:
 
 
 def list_raw_notes(notes_dir: Path) -> list[tuple[Path, str]]:
-    """List raw note files (.txt and image files) from daily directory."""
+    """List raw note files (.txt and image files) from top level."""
     files = []
-    daily_dir = notes_dir / "daily"
 
-    if not daily_dir.exists():
+    if not notes_dir.exists():
         return files
 
     valid_extensions = {".txt", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".pdf"}
 
-    for f in daily_dir.iterdir():
+    for f in notes_dir.iterdir():
+        # Skip subdirectories (analysis output)
+        if f.is_dir():
+            continue
         if f.is_file() and f.suffix.lower() in valid_extensions:
-            # Skip analysis files
-            if "_analysis.txt" in f.name:
+            # Skip analysis files and raw notes files
+            if "_analysis.txt" in f.name or ".raw_notes.txt" in f.name:
                 continue
             dt = parse_filename_datetime(f.name)
             display_name = format_file_datetime(dt, f.name)
@@ -327,12 +329,12 @@ def create_new_notes_file(notes_dir: Path) -> Path | None:
     Returns:
         Path to the created file, or None if creation failed
     """
-    daily_dir = notes_dir / "daily"
-    daily_dir.mkdir(parents=True, exist_ok=True)
+    # Create notes directory if it doesn't exist
+    notes_dir.mkdir(parents=True, exist_ok=True)
 
     # Generate timestamp-based filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    new_file = daily_dir / f"{timestamp}.txt"
+    new_file = notes_dir / f"{timestamp}.txt"
 
     try:
         # Create empty file

@@ -348,12 +348,12 @@ Whether you're using External/USB or Google Drive, TaskTriage expects this struc
 
 ```
 notes/
+├── 20251225_074353.txt                  # Raw daily notes (text)
+├── 20251226_083000.png                  # Raw daily notes (image)
+├── 20251226_083000.raw_notes.txt        # Extracted text from PNG (auto-generated, editable)
+├── 20251227_095000.pdf                  # Raw daily notes (PDF, single or multi-page)
+├── 20251227_095000.raw_notes.txt        # Extracted text from PDF (auto-generated, editable)
 ├── daily/
-│   ├── 20251225_074353.txt              # Raw daily notes (text)
-│   ├── 20251226_083000.png              # Raw daily notes (image)
-│   ├── 20251226_083000.raw_notes.txt    # Extracted text from PNG (auto-generated, editable)
-│   ├── 20251227_095000.pdf              # Raw daily notes (PDF, single or multi-page)
-│   ├── 20251227_095000.raw_notes.txt    # Extracted text from PDF (auto-generated, editable)
 │   ├── 20251225_074353.daily_analysis.txt  # Generated analysis
 │   ├── 20251226_083000.daily_analysis.txt  # Generated analysis
 │   ├── 20251227_095000.daily_analysis.txt  # Generated analysis
@@ -448,7 +448,7 @@ The UI opens in your browser at `http://localhost:8501` and provides:
   - Provides real-time progress updates and comprehensive error reporting
   - Useful for keeping all your locations in sync and consolidating notes from multiple sources
 - **Configuration** - Edit `.env` and `config.yaml` settings directly in the browser (API keys, notes source, model parameters)
-- **Raw Notes List** - Browse `.txt` and image files from your `daily/` directory, sorted by date
+- **Raw Notes List** - Browse `.txt` and image files from your root notes directory, sorted by date
   - **Open** - Load a selected note file for editing
   - **New** - Create a new empty `.txt` notes file with timestamp-based naming
 - **Analysis Files List** - Browse all generated analysis files across daily/weekly/monthly/annual
@@ -504,14 +504,14 @@ TaskTriage follows a strict temporal hierarchy, ensuring each level completes be
 
 **LEVEL 1: Daily Analysis (runs automatically)**
 
-1. TaskTriage finds ALL unanalyzed `.txt`, image, or PDF files in `Notes/daily/`
+1. TaskTriage finds ALL unanalyzed `.txt`, image, or PDF files in the root `Notes/` directory
    - Includes files that have never been analyzed
    - **Smart re-analysis**: Also includes files that were edited after their last analysis (detects changes by comparing file modification times)
 2. Processes them in parallel (up to 5 concurrent API calls)
 3. For images and PDFs, Claude's vision API extracts the text from your handwriting
    - **PDF Processing**: Multi-page PDFs are converted to images page-by-page, each page is processed, then all text is concatenated with page separators
    - **Automatic preservation**: The extracted text is also saved as a `.raw_notes.txt` file for easy editing in the UI
-4. Each file gets analyzed and saved as `{filename}.daily_analysis.txt`
+4. Each file gets analyzed and saved as `Notes/daily/{filename}.daily_analysis.txt`
    - If re-analyzing an edited file, the new analysis **replaces** the old one (no duplicates)
 5. Shows progress in real-time with success/failure indicators
 6. Prints: `Daily Summary: X successful, Y failed`
@@ -606,18 +606,19 @@ Annual analyses are **strategic and retrospective**. They help you see the big p
 
 ## Directory Structure
 
-TaskTriage organizes your analyses in a clear hierarchy:
+TaskTriage organizes raw notes at the top level and analyses in subdirectories:
 
 ```
 Notes/
+├── 20251225_074353.txt                        # Your daily task notes (text)
+├── 20251225_074353.raw_notes.txt              # Extracted text (auto-generated, editable)
+├── 20251226_094500.png                        # Your daily task notes (image)
+├── 20251226_094500.raw_notes.txt              # Extracted text from PNG (auto-generated)
+├── 20251227_120000.pdf                        # Your daily task notes (PDF)
+├── 20251227_120000.raw_notes.txt              # Extracted text from PDF (auto-generated)
 ├── daily/
-│   ├── 20251225_074353.txt                    # Your daily task notes (text)
 │   ├── 20251225_074353.daily_analysis.txt     # Analysis output
-│   ├── 20251226_094500.png                    # Your daily task notes (image)
-│   ├── 20251226_094500.raw_notes.txt          # Extracted text from PNG (auto-generated)
 │   ├── 20251226_094500.daily_analysis.txt     # Analysis output
-│   ├── 20251227_120000.pdf                    # Your daily task notes (PDF)
-│   ├── 20251227_120000.raw_notes.txt          # Extracted text from PDF (auto-generated)
 │   └── 20251227_120000.daily_analysis.txt     # Analysis output
 ├── weekly/
 │   ├── 20251223.weekly_analysis.txt           # Week of Dec 23-27
@@ -832,8 +833,8 @@ files = client.list_notes_files("daily")
 
 **"No unanalyzed notes files found"**
 - Your notes files need to follow the naming format: `YYYYMMDD_HHMMSS.txt` or `.png`
-- Make sure they're in the correct subfolder (`daily/` or `weekly/`)
-- TaskTriage is looking for files that don't have a matching `.daily_analysis.txt` or `.weekly_analysis.txt` file
+- Make sure they're in the root notes directory (not in a subfolder)
+- TaskTriage is looking for files that don't have a matching `.daily_analysis.txt` file in the `daily/` subdirectory
 
 ### External/Local Directory Issues
 
@@ -844,11 +845,11 @@ files = client.list_notes_files("daily")
 **"USB directory not found"**
 - Is your USB device actually plugged in and mounted?
 - Check that the `EXTERNAL_INPUT_DIR` path in your `.env` file is correct and points to the right location
-- The directory must contain `daily/`, `weekly/`, `monthly/`, and `annual/` subdirectories
+- Raw notes should be in the root directory; `daily/`, `weekly/`, `monthly/`, and `annual/` subdirectories are created automatically for analysis files
 
 **"Local directory not found"**
 - Verify the `LOCAL_INPUT_DIR` path exists
-- Make sure it has the required subdirectory structure (`daily/`, etc.)
+- Raw notes should be in the root directory; analysis subdirectories (`daily/`, `weekly/`, `monthly/`, `annual/`) are created automatically
 
 ### Re-Analysis and Editing Notes
 

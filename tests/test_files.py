@@ -14,7 +14,7 @@ class TestLoadTaskNotesUsb:
 
     def test_loads_text_file(self, mock_usb_dir, sample_notes_file):
         """Should load content from a text file."""
-        with patch("tasktriage.files.USB_DIR", str(mock_usb_dir)), \
+        with patch("tasktriage.files.get_all_input_directories", return_value=[mock_usb_dir]), \
              patch("tasktriage.files.get_active_source", return_value="usb"):
             from tasktriage.files import load_task_notes
 
@@ -40,9 +40,8 @@ class TestLoadTaskNotesUsb:
 
     def test_skips_analysis_files(self, mock_usb_dir, sample_analysis_file):
         """Should skip files that are already analysis files."""
-        # Create a notes file
-        daily_dir = mock_usb_dir / "daily"
-        notes_path = daily_dir / "20251228_100000.txt"
+        # Create a notes file at the top level
+        notes_path = mock_usb_dir / "20251228_100000.txt"
         notes_path.write_text("Some tasks")
 
         with patch("tasktriage.files.USB_DIR", str(mock_usb_dir)), \
@@ -59,14 +58,15 @@ class TestLoadTaskNotesUsb:
         """Should skip notes files that already have an analysis file."""
         daily_dir = mock_usb_dir / "daily"
 
-        # Create a notes file with existing analysis
-        notes_with_analysis = daily_dir / "20251231_143000.txt"
+        # Create a notes file with existing analysis at the top level
+        notes_with_analysis = mock_usb_dir / "20251231_143000.txt"
         notes_with_analysis.write_text("Old tasks")
+        # Analysis file goes to daily subdirectory
         analysis_file = daily_dir / "20251231_143000.daily_analysis.txt"
         analysis_file.write_text("Analysis exists")
 
-        # Create a newer notes file without analysis
-        newer_notes = daily_dir / "20251230_090000.txt"
+        # Create a newer notes file without analysis at the top level
+        newer_notes = mock_usb_dir / "20251230_090000.txt"
         newer_notes.write_text("Newer tasks")
 
         with patch("tasktriage.files.USB_DIR", str(mock_usb_dir)), \
@@ -90,7 +90,7 @@ class TestLoadTaskNotesUsb:
     def test_raises_when_no_unanalyzed_files(self, mock_usb_dir):
         """Should raise FileNotFoundError when all files are analyzed."""
         daily_dir = mock_usb_dir / "daily"
-        # Create only an analysis file
+        # Create only an analysis file in daily subdirectory
         analysis = daily_dir / "20251231_143000.daily_analysis.txt"
         analysis.write_text("Analysis content")
 

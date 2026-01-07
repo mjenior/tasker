@@ -20,19 +20,22 @@ def temp_dir():
 
 @pytest.fixture
 def mock_usb_dir(temp_dir):
-    """Create a mock USB directory structure with daily and weekly folders."""
+    """Create a mock USB directory structure with analysis subdirectories."""
     daily_dir = temp_dir / "daily"
     weekly_dir = temp_dir / "weekly"
+    monthly_dir = temp_dir / "monthly"
+    annual_dir = temp_dir / "annual"
     daily_dir.mkdir()
     weekly_dir.mkdir()
+    monthly_dir.mkdir()
+    annual_dir.mkdir()
     return temp_dir
 
 
 @pytest.fixture
 def sample_notes_file(mock_usb_dir):
-    """Create a sample notes text file."""
-    daily_dir = mock_usb_dir / "daily"
-    notes_path = daily_dir / "20251231_143000.txt"
+    """Create a sample notes text file at the top level."""
+    notes_path = mock_usb_dir / "20251231_143000.txt"
     notes_content = """Work
     Review Q4 budget proposal
     Fix login bug *
@@ -48,9 +51,8 @@ Home
 
 @pytest.fixture
 def sample_image_file(mock_usb_dir):
-    """Create a sample PNG file (minimal valid PNG)."""
-    daily_dir = mock_usb_dir / "daily"
-    image_path = daily_dir / "20251230_090000.png"
+    """Create a sample PNG file (minimal valid PNG) at the top level."""
+    image_path = mock_usb_dir / "20251230_090000.png"
     # Minimal valid 1x1 PNG file
     png_data = bytes([
         0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,  # PNG signature
@@ -69,7 +71,7 @@ def sample_image_file(mock_usb_dir):
 
 @pytest.fixture
 def sample_analysis_file(mock_usb_dir):
-    """Create a sample daily analysis file."""
+    """Create a sample daily analysis file in the daily subdirectory."""
     daily_dir = mock_usb_dir / "daily"
     analysis_path = daily_dir / "20251229_080000.daily_analysis.txt"
     analysis_content = """Daily Task Analysis
