@@ -150,8 +150,8 @@ def _load_task_notes_usb(notes_type: str = "daily", file_preference: str = "png"
         all_files = sorted(all_files, reverse=True)
 
         for notes_path in all_files:
-            # Skip files that are already analysis files (both old and new naming)
-            if "_analysis" in notes_path.name or ".triaged." in notes_path.name:
+            # Skip files that are already triaged
+            if ".triaged." in notes_path.name:
                 continue
 
             # Extract timestamp from filename (handles page identifiers)
@@ -176,7 +176,6 @@ def _load_task_notes_usb(notes_type: str = "daily", file_preference: str = "png"
                     date_str = ts_date.strftime("%d_%m_%Y")  # Default to DD_MM_YYYY
             except ValueError:
                 continue
-            # All analysis types now use "triaged" naming
             analysis_filename = f"{date_str}.triaged.txt"
             # Analysis files are in subdirectories, not at the same level as raw notes
             if notes_type in ["daily", "weekly", "monthly", "annual"]:
@@ -258,8 +257,8 @@ def _load_all_unanalyzed_task_notes_usb(notes_type: str = "daily", file_preferen
         all_files = sorted(all_files, reverse=True)
 
         for notes_path in all_files:
-            # Skip files that are already analysis files (both old and new naming)
-            if "_analysis" in notes_path.name or ".triaged." in notes_path.name:
+            # Skip files that are already triaged
+            if ".triaged." in notes_path.name:
                 continue
 
             # Extract timestamp from filename (handles page identifiers)
@@ -288,7 +287,6 @@ def _load_all_unanalyzed_task_notes_usb(notes_type: str = "daily", file_preferen
                     date_str = ts_date.strftime("%d_%m_%Y")  # Default to DD_MM_YYYY
             except ValueError:
                 continue
-            # All analysis types now use "triaged" naming
             analysis_filename = f"{date_str}.triaged.txt"
             # Analysis files are in subdirectories, not at the same level as raw notes
             if notes_type in ["daily", "weekly", "monthly", "annual"]:
@@ -431,7 +429,6 @@ def _save_analysis_usb(analysis: str, input_path: Path, notes_type: str = "daily
                 date_str = ts_date.strftime("%d_%m_%Y")  # Default to DD_MM_YYYY
         except ValueError:
             date_str = timestamp[:8]  # Fallback to raw date portion
-        # All analysis types now use "triaged" naming
         output_filename = f"{date_str}.triaged.txt"
     else:
         # Fallback to full stem if timestamp extraction fails
@@ -528,9 +525,6 @@ def convert_visual_files_in_directory(
     processed_timestamps = set()
 
     for visual_path in sorted(visual_files):
-        # Skip analysis files
-        if "_analysis" in visual_path.name:
-            continue
 
         # Extract timestamp from filename
         timestamp = _extract_timestamp(visual_path.name)
@@ -639,7 +633,6 @@ def _needs_reanalysis_gdrive(notes_type: str, timestamp: str, file_info: dict) -
     except ValueError:
         return False
 
-    # All analysis types now use "triaged" naming
     analysis_path = Path(LOCAL_OUTPUT_DIR) / notes_type / f"{date_str}.triaged.txt"
     if not analysis_path.exists():
         return False  # No analysis exists, not a "re-analysis" case
@@ -667,11 +660,8 @@ def _load_task_notes_gdrive(notes_type: str = "daily", file_preference: str = "p
     from .config import LOCAL_OUTPUT_DIR
     from .gdrive import (
         GoogleDriveClient,
-        IMAGE_MIME_TYPES,
-        PDF_MIME_TYPES,
         VISUAL_MIME_TYPES,
         parse_filename_datetime,
-        get_file_extension,
         extract_timestamp_from_filename,
     )
 
@@ -683,8 +673,8 @@ def _load_task_notes_gdrive(notes_type: str = "daily", file_preference: str = "p
         file_id = file_info["id"]
         mime_type = file_info["mimeType"]
 
-        # Skip analysis files (both old and new naming)
-        if "_analysis" in filename or ".triaged." in filename:
+        # Skip files that are already triaged
+        if ".triaged." in filename:
             continue
 
         # Filter by file type preference
@@ -721,7 +711,6 @@ def _load_task_notes_gdrive(notes_type: str = "daily", file_preference: str = "p
                     date_str = ts_date.strftime("%d_%m_%Y")  # Default to DD_MM_YYYY
             except ValueError:
                 continue
-            # All analysis types now use "triaged" naming
             analysis_filename = f"{date_str}.triaged.txt"
         else:
             stem = Path(filename).stem
@@ -782,11 +771,8 @@ def _load_all_unanalyzed_task_notes_gdrive(notes_type: str = "daily", file_prefe
     from .config import LOCAL_OUTPUT_DIR
     from .gdrive import (
         GoogleDriveClient,
-        IMAGE_MIME_TYPES,
-        PDF_MIME_TYPES,
         VISUAL_MIME_TYPES,
         parse_filename_datetime,
-        get_file_extension,
         extract_timestamp_from_filename,
     )
 
@@ -800,8 +786,8 @@ def _load_all_unanalyzed_task_notes_gdrive(notes_type: str = "daily", file_prefe
         file_id = file_info["id"]
         mime_type = file_info["mimeType"]
 
-        # Skip analysis files (both old and new naming)
-        if "_analysis" in filename or ".triaged." in filename:
+        # Skip files that are already triaged
+        if ".triaged." in filename:
             continue
 
         # Filter by file type preference
@@ -838,7 +824,6 @@ def _load_all_unanalyzed_task_notes_gdrive(notes_type: str = "daily", file_prefe
                     date_str = ts_date.strftime("%d_%m_%Y")  # Default to DD_MM_YYYY
             except ValueError:
                 continue
-            # All analysis types now use "triaged" naming
             analysis_filename = f"{date_str}.triaged.txt"
         else:
             stem = Path(filename).stem
@@ -982,13 +967,12 @@ def _save_analysis_gdrive(analysis: str, input_path: Path, notes_type: str = "da
         except ValueError:
             date_str = timestamp[:8]  # Fallback to raw date portion
     else:
-        # Fallback: extract stem and handle special cases
+        # Fallback: extract stem
         stem = Path(filename).stem
-        if "." in stem and "_analysis" not in stem and ".triaged" not in stem:
+        if "." in stem:
             stem = stem.split(".")[0]
         date_str = stem
 
-    # All analysis types now use "triaged" naming
     output_filename = f"{date_str}.triaged.txt"
 
     header = "Triaged Tasks"

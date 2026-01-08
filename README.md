@@ -136,10 +136,6 @@ In auto mode, new files created in the UI are saved to:
 2. `LOCAL_INPUT_DIR` (if USB not available)
 3. Google Drive (if neither local directory is available)
 
-#### Backward Compatibility
-
-The old `USB_DIR` variable is still supported for backward compatibility. If you have existing configurations using `USB_DIR`, they will continue to work (it's treated as `EXTERNAL_INPUT_DIR`).
-
 ### Anthropic API Key
 
 You'll need an API key from Anthropic. Get one at https://console.anthropic.com/ and drop it in:
@@ -333,13 +329,13 @@ Analysis files get saved locally instead:
 ```
 LOCAL_OUTPUT_DIR/
 ├── daily/
-│   └── 20251225_074353.daily_analysis.txt  # Generated analysis
+│   └── 25_12_2025.triaged.txt              # Generated analysis (DD_MM_YYYY format)
 ├── weekly/
-│   └── 20251223.weekly_analysis.txt        # Generated weekly analysis
+│   └── week1_12_2025.triaged.txt           # Generated weekly analysis (weekN_MM_YYYY format)
 ├── monthly/
-│   └── 202512.monthly_analysis.txt         # Generated monthly analysis
+│   └── 12_2025.triaged.txt                 # Generated monthly analysis (MM_YYYY format)
 └── annual/
-    └── 2025.annual_analysis.txt            # Generated annual analysis
+    └── 2025.triaged.txt                    # Generated annual analysis (YYYY format)
 ```
 
 ## Notes Directory Structure
@@ -354,18 +350,18 @@ notes/
 ├── 20251227_095000.pdf                  # Raw daily notes (PDF, single or multi-page)
 ├── 20251227_095000.raw_notes.txt        # Extracted text from PDF (auto-generated, editable)
 ├── daily/
-│   ├── 20251225_074353.daily_analysis.txt  # Generated analysis
-│   ├── 20251226_083000.daily_analysis.txt  # Generated analysis
-│   ├── 20251227_095000.daily_analysis.txt  # Generated analysis
+│   ├── 25_12_2025.triaged.txt           # Generated analysis (DD_MM_YYYY.triaged.txt)
+│   ├── 26_12_2025.triaged.txt           # Generated analysis
+│   ├── 27_12_2025.triaged.txt           # Generated analysis
 │   └── ...
 ├── weekly/
-│   ├── 20251223.weekly_analysis.txt     # Generated weekly analysis
+│   ├── week4_12_2025.triaged.txt        # Generated weekly analysis (weekN_MM_YYYY.triaged.txt)
 │   └── ...
 ├── monthly/
-│   ├── 202512.monthly_analysis.txt      # Generated monthly analysis
+│   ├── 12_2025.triaged.txt              # Generated monthly analysis (MM_YYYY.triaged.txt)
 │   └── ...
 └── annual/
-    └── 2025.annual_analysis.txt         # Generated annual analysis
+    └── 2025.triaged.txt                 # Generated annual analysis (YYYY.triaged.txt)
 ```
 
 ### Supported File Formats
@@ -632,26 +628,26 @@ Notes/
 ├── 20251227_120000.pdf                        # Your daily task notes (PDF)
 ├── 20251227_120000.raw_notes.txt              # Extracted text from PDF (auto-generated)
 ├── daily/
-│   ├── 20251225_074353.daily_analysis.txt     # Analysis output
-│   ├── 20251226_094500.daily_analysis.txt     # Analysis output
-│   └── 20251227_120000.daily_analysis.txt     # Analysis output
+│   ├── 25_12_2025.triaged.txt                 # Analysis output (DD_MM_YYYY.triaged.txt)
+│   ├── 26_12_2025.triaged.txt                 # Analysis output
+│   └── 27_12_2025.triaged.txt                 # Analysis output
 ├── weekly/
-│   ├── 20251223.weekly_analysis.txt           # Week of Dec 23-27
-│   └── 20251230.weekly_analysis.txt           # Week of Dec 30-Jan 3
+│   ├── week4_12_2025.triaged.txt              # Week 4 of Dec 2025 (weekN_MM_YYYY.triaged.txt)
+│   └── week1_01_2026.triaged.txt              # Week 1 of Jan 2026
 ├── monthly/
-│   ├── 202512.monthly_analysis.txt            # December 2025 synthesis
-│   └── 202511.monthly_analysis.txt            # November 2025 synthesis
+│   ├── 12_2025.triaged.txt                    # December 2025 synthesis (MM_YYYY.triaged.txt)
+│   └── 11_2025.triaged.txt                    # November 2025 synthesis
 └── annual/
-    └── 2025.annual_analysis.txt               # Full year 2025 synthesis
+    └── 2025.triaged.txt                       # Full year 2025 synthesis (YYYY.triaged.txt)
 ```
 
 Filename formats:
 - **Daily notes**: `YYYYMMDD_HHMMSS.{txt|png|jpg|pdf|...}` (e.g., `20251225_074353.txt` or `20251225_074353.pdf`)
 - **Raw text from images/PDFs**: `YYYYMMDD_HHMMSS.raw_notes.txt` (auto-generated when analyzing image or PDF files)
-- **Daily analyses**: `YYYYMMDD_HHMMSS.daily_analysis.txt`
-- **Weekly analyses**: `YYYYMMDD.weekly_analysis.txt` (date is Monday of that week)
-- **Monthly analyses**: `YYYYMM.monthly_analysis.txt` (e.g., `202512.monthly_analysis.txt` for December 2025)
-- **Annual analyses**: `YYYY.annual_analysis.txt` (e.g., `2025.annual_analysis.txt` for full year 2025)
+- **Daily analyses**: `DD_MM_YYYY.triaged.txt` (e.g., `25_12_2025.triaged.txt`)
+- **Weekly analyses**: `weekN_MM_YYYY.triaged.txt` (e.g., `week4_12_2025.triaged.txt` for week 4 of December 2025)
+- **Monthly analyses**: `MM_YYYY.triaged.txt` (e.g., `12_2025.triaged.txt` for December 2025)
+- **Annual analyses**: `YYYY.triaged.txt` (e.g., `2025.triaged.txt` for full year 2025)
 
 ## Task Commands
 
@@ -783,7 +779,6 @@ from tasktriage import (
     get_weekly_prompt,
     get_monthly_prompt,
     get_annual_prompt,
-    load_task_notes,
     load_all_unanalyzed_task_notes,
     collect_weekly_analyses_for_week,
     collect_monthly_analyses_for_month,
@@ -791,11 +786,11 @@ from tasktriage import (
     extract_text_from_image,
     extract_text_from_pdf,
     GoogleDriveClient,
-    get_notes_source,
+    get_active_source,
 )
 
-# Check which source is being used
-print(f"Using: {get_notes_source()}")  # "external" or "gdrive"
+# Check which source is being used for output
+print(f"Using: {get_active_source()}")  # "usb" or "gdrive"
 
 # Get prompt templates with dynamic variables
 daily_prompt = get_daily_prompt()
@@ -833,23 +828,22 @@ files = client.list_notes_files("daily")
 
 ### Google Drive Issues
 
-**"Google Drive credentials path not set"**
-- Make sure `GOOGLE_CREDENTIALS_PATH` is set in your `.env` file
-- Double-check that the path actually points to your credentials JSON file
+**"OAuth credentials required"**
+- Make sure `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` are set in your `.env` file
+- Authenticate via the web UI by clicking "Sign in with Google" in the Configuration section
 
 **"Subfolder 'daily' not found in Google Drive folder"**
 - You need to create `daily` and `weekly` subfolders in your Google Drive notes folder
-- Also confirm the parent folder is shared with your service account (easy to forget this step)
+- Make sure `GOOGLE_DRIVE_FOLDER_ID` points to the correct folder
 
 **"Permission denied" errors**
-- Check that your service account has "Editor" access to the folder
-- Try removing and re-sharing the folder with the service account email
-- Remember: the service account email is in your credentials JSON file as `client_email`
+- Make sure you've authenticated with Google Drive via the web UI
+- Try revoking access at [Google Account Settings](https://myaccount.google.com/permissions) and re-authenticating
 
 **"No unanalyzed notes files found"**
 - Your notes files need to follow the naming format: `YYYYMMDD_HHMMSS.txt` or `.png`
 - Make sure they're in the root notes directory (not in a subfolder)
-- TaskTriage is looking for files that don't have a matching `.daily_analysis.txt` file in the `daily/` subdirectory
+- TaskTriage is looking for files that don't have a matching `.triaged.txt` file in the `daily/` subdirectory
 
 ### External/Local Directory Issues
 
@@ -875,7 +869,7 @@ files = client.list_notes_files("daily")
 - The new analysis **replaces** the old one (same filename), so you won't have duplicate analysis files
 
 **What files trigger re-analysis?**
-- `.txt` files that were modified after their `.daily_analysis.txt` was created
+- `.txt` files that were modified after their `.triaged.txt` was created
 - `.raw_notes.txt` files (extracted from images or PDFs) that were edited after their analysis
 - The original image (`.png`, `.jpg`, etc.) or PDF (`.pdf`) file itself if it was replaced with a newer version
 

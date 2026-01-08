@@ -20,8 +20,10 @@ class TestMainFunction:
         with patch("tasktriage.cli.load_all_unanalyzed_task_notes") as mock_load_all, \
              patch("tasktriage.cli.analyze_tasks") as mock_analyze, \
              patch("tasktriage.cli.save_analysis") as mock_save, \
-             patch("tasktriage.cli.get_notes_source") as mock_source, \
-             patch("tasktriage.cli.collect_weekly_analyses") as mock_weekly:
+             patch("tasktriage.cli.get_active_source") as mock_source, \
+             patch("tasktriage.files._find_weeks_needing_analysis", return_value=[]), \
+             patch("tasktriage.files._find_months_needing_analysis", return_value=[]), \
+             patch("tasktriage.files._find_years_needing_analysis", return_value=[]):
 
             # Default mock returns - list of files for batch processing
             notes_path = temp_dir / "daily" / "20251231_143000.txt"
@@ -37,7 +39,6 @@ class TestMainFunction:
                 "analyze": mock_analyze,
                 "save": mock_save,
                 "source": mock_source,
-                "weekly": mock_weekly,
                 "temp_dir": temp_dir,
             }
 
@@ -164,26 +165,28 @@ class TestMainFunction:
 class TestErrorHandling:
     """Tests for CLI error handling."""
 
-    def test_handles_file_not_found_error(self, capsys):
-        """Should handle FileNotFoundError gracefully."""
-        with patch("tasktriage.cli.get_notes_source", return_value="usb"), \
+    def test_handles_file_not_found_gracefully(self, capsys):
+        """Should handle FileNotFoundError gracefully and continue to check other analysis levels."""
+        with patch("tasktriage.cli.get_active_source", return_value="usb"), \
              patch("tasktriage.cli.load_all_unanalyzed_task_notes") as mock_load_all, \
+             patch("tasktriage.files._find_weeks_needing_analysis", return_value=[]), \
+             patch("tasktriage.files._find_months_needing_analysis", return_value=[]), \
+             patch("tasktriage.files._find_years_needing_analysis", return_value=[]), \
              patch("sys.argv", ["tasker"]):
             mock_load_all.side_effect = FileNotFoundError("Notes directory not found")
 
             from tasktriage.cli import main
 
-            with pytest.raises(SystemExit) as exc_info:
-                main()
+            # Should complete without raising since FileNotFoundError is caught gracefully
+            main()
 
-            assert exc_info.value.code == 1
             captured = capsys.readouterr()
-            assert "Error:" in captured.err
-            assert "not found" in captured.err
+            # Check that the friendly message is shown instead of an error
+            assert "No unanalyzed daily files found" in captured.out
 
     def test_handles_general_exception(self, capsys):
         """Should handle general exceptions gracefully."""
-        with patch("tasktriage.cli.get_notes_source", return_value="usb"), \
+        with patch("tasktriage.cli.get_active_source", return_value="usb"), \
              patch("tasktriage.cli.load_all_unanalyzed_task_notes") as mock_load_all, \
              patch("sys.argv", ["tasker"]):
             mock_load_all.side_effect = Exception("Unexpected error")
@@ -201,7 +204,7 @@ class TestErrorHandling:
         """Should handle API errors gracefully."""
         notes_path = temp_dir / "daily" / "20251231_143000.txt"
 
-        with patch("tasktriage.cli.get_notes_source", return_value="usb"), \
+        with patch("tasktriage.cli.get_active_source", return_value="usb"), \
              patch("tasktriage.cli.load_all_unanalyzed_task_notes") as mock_load_all, \
              patch("tasktriage.cli.analyze_tasks") as mock_analyze, \
              patch("sys.argv", ["tasker"]):
@@ -221,10 +224,13 @@ class TestArgumentParsing:
 
     def test_accepts_files_argument(self):
         """Should accept --files argument for file type preference."""
-        with patch("tasktriage.cli.get_notes_source", return_value="usb"), \
+        with patch("tasktriage.cli.get_active_source", return_value="usb"), \
              patch("tasktriage.cli.load_all_unanalyzed_task_notes") as mock_load_all, \
              patch("tasktriage.cli.analyze_tasks", return_value="Result"), \
              patch("tasktriage.cli.save_analysis", return_value=Path("/tmp/analysis.txt")), \
+             patch("tasktriage.files._find_weeks_needing_analysis", return_value=[]), \
+             patch("tasktriage.files._find_months_needing_analysis", return_value=[]), \
+             patch("tasktriage.files._find_years_needing_analysis", return_value=[]), \
              patch("sys.argv", ["tasker", "--files", "txt"]):
             mock_load_all.return_value = [("Content", Path("/tmp/notes.txt"), datetime.now())]
 
@@ -235,10 +241,13 @@ class TestArgumentParsing:
 
     def test_defaults_to_png_files(self):
         """Should default to png file type when no --files argument provided."""
-        with patch("tasktriage.cli.get_notes_source", return_value="usb"), \
+        with patch("tasktriage.cli.get_active_source", return_value="usb"), \
              patch("tasktriage.cli.load_all_unanalyzed_task_notes") as mock_load_all, \
              patch("tasktriage.cli.analyze_tasks", return_value="Result"), \
              patch("tasktriage.cli.save_analysis", return_value=Path("/tmp/analysis.txt")), \
+             patch("tasktriage.files._find_weeks_needing_analysis", return_value=[]), \
+             patch("tasktriage.files._find_months_needing_analysis", return_value=[]), \
+             patch("tasktriage.files._find_years_needing_analysis", return_value=[]), \
              patch("sys.argv", ["tasker"]):
             mock_load_all.return_value = [("Content", Path("/tmp/notes.png"), datetime.now())]
 
@@ -276,10 +285,10 @@ class TestExampleFilesIntegration:
 
     def test_cli_can_process_example_file_format(self, example_text_file):
         """CLI should be able to process files with example file naming format."""
-        from tasktriage.files import _parse_filename_datetime
+        from tasktriage.gdrive import parse_filename_datetime
 
         # Verify the example file uses the correct naming format
-        file_date = _parse_filename_datetime(example_text_file.name)
+        file_date = parse_filename_datetime(example_text_file.name)
         assert file_date is not None
         assert file_date.year == 2025
         assert file_date.month == 12

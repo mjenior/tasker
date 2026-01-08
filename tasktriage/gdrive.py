@@ -80,7 +80,7 @@ class GoogleDriveClient:
         """Get the ID of a subfolder within the root folder.
 
         Args:
-            subfolder_name: Name of the subfolder (e.g., "daily", "Deekly")
+            subfolder_name: Name of the subfolder (e.g., "daily", "weekly")
 
         Returns:
             The folder ID, or None if not found.

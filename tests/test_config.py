@@ -101,93 +101,117 @@ class TestLoadModelConfig:
 class TestIsUsbAvailable:
     """Tests for is_usb_available function."""
 
-    def test_returns_true_when_usb_dir_exists(self, temp_dir, monkeypatch):
-        """Should return True when USB_DIR exists."""
-        monkeypatch.setenv("USB_DIR", str(temp_dir))
+    def test_returns_true_when_usb_dir_exists(self, temp_dir):
+        """Should return True when EXTERNAL_INPUT_DIR exists."""
+        import tasktriage.config
 
-        with patch("tasktriage.config.USB_DIR", str(temp_dir)):
-            from tasktriage.config import is_usb_available
-
-            import importlib
-            import tasktriage.config
-            tasktriage.config.USB_DIR = str(temp_dir)
-
+        original = tasktriage.config.EXTERNAL_INPUT_DIR
+        try:
+            tasktriage.config.EXTERNAL_INPUT_DIR = str(temp_dir)
             result = tasktriage.config.is_usb_available()
             assert result is True
+        finally:
+            tasktriage.config.EXTERNAL_INPUT_DIR = original
 
-    def test_returns_false_when_usb_dir_not_set(self, monkeypatch):
-        """Should return False when USB_DIR is not set."""
-        with patch("tasktriage.config.USB_DIR", None):
-            from tasktriage.config import is_usb_available
+    def test_returns_false_when_usb_dir_not_set(self):
+        """Should return False when EXTERNAL_INPUT_DIR is not set."""
+        import tasktriage.config
 
-            import tasktriage.config
-            tasktriage.config.USB_DIR = None
-
+        original = tasktriage.config.EXTERNAL_INPUT_DIR
+        try:
+            tasktriage.config.EXTERNAL_INPUT_DIR = None
             result = tasktriage.config.is_usb_available()
             assert result is False
+        finally:
+            tasktriage.config.EXTERNAL_INPUT_DIR = original
 
-    def test_returns_false_when_usb_dir_doesnt_exist(self, monkeypatch):
-        """Should return False when USB_DIR path doesn't exist."""
-        with patch("tasktriage.config.USB_DIR", "/nonexistent/path"):
-            import tasktriage.config
-            tasktriage.config.USB_DIR = "/nonexistent/path"
+    def test_returns_false_when_usb_dir_doesnt_exist(self):
+        """Should return False when EXTERNAL_INPUT_DIR path doesn't exist."""
+        import tasktriage.config
 
+        original = tasktriage.config.EXTERNAL_INPUT_DIR
+        try:
+            tasktriage.config.EXTERNAL_INPUT_DIR = "/nonexistent/path"
             result = tasktriage.config.is_usb_available()
             assert result is False
+        finally:
+            tasktriage.config.EXTERNAL_INPUT_DIR = original
 
 
 class TestIsGdriveAvailable:
-    """Tests for is_gdrive_available function."""
+    """Tests for is_gdrive_available function (OAuth-based)."""
 
-    def test_returns_true_when_credentials_exist(self, temp_dir, monkeypatch):
-        """Should return True when Google Drive is properly configured."""
-        credentials_path = temp_dir / "credentials.json"
-        credentials_path.write_text('{"type": "service_account"}')
+    def test_returns_true_when_credentials_exist(self):
+        """Should return True when Google Drive OAuth is properly configured."""
+        import tasktriage.config
 
-        with patch("tasktriage.config.GOOGLE_CREDENTIALS_PATH", str(credentials_path)), \
-             patch("tasktriage.config.GOOGLE_DRIVE_FOLDER_ID", "test-folder-id"):
-            import tasktriage.config
-            tasktriage.config.GOOGLE_CREDENTIALS_PATH = str(credentials_path)
+        orig_id = tasktriage.config.GOOGLE_OAUTH_CLIENT_ID
+        orig_secret = tasktriage.config.GOOGLE_OAUTH_CLIENT_SECRET
+        orig_folder = tasktriage.config.GOOGLE_DRIVE_FOLDER_ID
+        try:
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_ID = "test-client-id"
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_SECRET = "test-client-secret"
             tasktriage.config.GOOGLE_DRIVE_FOLDER_ID = "test-folder-id"
-
             result = tasktriage.config.is_gdrive_available()
             assert result is True
+        finally:
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_ID = orig_id
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_SECRET = orig_secret
+            tasktriage.config.GOOGLE_DRIVE_FOLDER_ID = orig_folder
 
-    def test_returns_false_when_credentials_path_not_set(self):
-        """Should return False when GOOGLE_CREDENTIALS_PATH is not set."""
-        with patch("tasktriage.config.GOOGLE_CREDENTIALS_PATH", None), \
-             patch("tasktriage.config.GOOGLE_DRIVE_FOLDER_ID", "test-folder-id"):
-            import tasktriage.config
-            tasktriage.config.GOOGLE_CREDENTIALS_PATH = None
+    def test_returns_false_when_client_id_not_set(self):
+        """Should return False when GOOGLE_OAUTH_CLIENT_ID is not set."""
+        import tasktriage.config
+
+        orig_id = tasktriage.config.GOOGLE_OAUTH_CLIENT_ID
+        orig_secret = tasktriage.config.GOOGLE_OAUTH_CLIENT_SECRET
+        orig_folder = tasktriage.config.GOOGLE_DRIVE_FOLDER_ID
+        try:
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_ID = None
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_SECRET = "test-client-secret"
             tasktriage.config.GOOGLE_DRIVE_FOLDER_ID = "test-folder-id"
-
             result = tasktriage.config.is_gdrive_available()
             assert result is False
+        finally:
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_ID = orig_id
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_SECRET = orig_secret
+            tasktriage.config.GOOGLE_DRIVE_FOLDER_ID = orig_folder
 
-    def test_returns_false_when_folder_id_not_set(self, temp_dir):
+    def test_returns_false_when_folder_id_not_set(self):
         """Should return False when GOOGLE_DRIVE_FOLDER_ID is not set."""
-        credentials_path = temp_dir / "credentials.json"
-        credentials_path.write_text('{"type": "service_account"}')
+        import tasktriage.config
 
-        with patch("tasktriage.config.GOOGLE_CREDENTIALS_PATH", str(credentials_path)), \
-             patch("tasktriage.config.GOOGLE_DRIVE_FOLDER_ID", None):
-            import tasktriage.config
-            tasktriage.config.GOOGLE_CREDENTIALS_PATH = str(credentials_path)
+        orig_id = tasktriage.config.GOOGLE_OAUTH_CLIENT_ID
+        orig_secret = tasktriage.config.GOOGLE_OAUTH_CLIENT_SECRET
+        orig_folder = tasktriage.config.GOOGLE_DRIVE_FOLDER_ID
+        try:
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_ID = "test-client-id"
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_SECRET = "test-client-secret"
             tasktriage.config.GOOGLE_DRIVE_FOLDER_ID = None
-
             result = tasktriage.config.is_gdrive_available()
             assert result is False
+        finally:
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_ID = orig_id
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_SECRET = orig_secret
+            tasktriage.config.GOOGLE_DRIVE_FOLDER_ID = orig_folder
 
-    def test_returns_false_when_credentials_file_missing(self):
-        """Should return False when credentials file doesn't exist."""
-        with patch("tasktriage.config.GOOGLE_CREDENTIALS_PATH", "/nonexistent/creds.json"), \
-             patch("tasktriage.config.GOOGLE_DRIVE_FOLDER_ID", "test-folder-id"):
-            import tasktriage.config
-            tasktriage.config.GOOGLE_CREDENTIALS_PATH = "/nonexistent/creds.json"
+    def test_returns_false_when_client_secret_not_set(self):
+        """Should return False when GOOGLE_OAUTH_CLIENT_SECRET is not set."""
+        import tasktriage.config
+
+        orig_id = tasktriage.config.GOOGLE_OAUTH_CLIENT_ID
+        orig_secret = tasktriage.config.GOOGLE_OAUTH_CLIENT_SECRET
+        orig_folder = tasktriage.config.GOOGLE_DRIVE_FOLDER_ID
+        try:
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_ID = "test-client-id"
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_SECRET = None
             tasktriage.config.GOOGLE_DRIVE_FOLDER_ID = "test-folder-id"
-
             result = tasktriage.config.is_gdrive_available()
             assert result is False
+        finally:
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_ID = orig_id
+            tasktriage.config.GOOGLE_OAUTH_CLIENT_SECRET = orig_secret
+            tasktriage.config.GOOGLE_DRIVE_FOLDER_ID = orig_folder
 
 
 class TestGetActiveSource:

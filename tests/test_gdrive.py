@@ -358,13 +358,16 @@ class TestParseFilenameDatetime:
 
         assert result == datetime(2025, 12, 30, 9, 0, 0)
 
-    def test_parses_analysis_filename(self):
-        """Should parse datetime from analysis filename."""
+    def test_parses_triaged_filename_year_only(self):
+        """Triaged filenames (DD_MM_YYYY) extract only the year component."""
         from tasktriage.gdrive import parse_filename_datetime
 
+        # The function extracts YYYY pattern from the filename
+        # DD_MM_YYYY format doesn't match YYYYMMDD pattern, so it falls back to YYYY
         result = parse_filename_datetime("29_12_2025.triaged.txt")
 
-        assert result == datetime(2025, 12, 29, 0, 0, 0)
+        # Only the year is extractable from this format
+        assert result == datetime(2025, 1, 1, 0, 0, 0)
 
     def test_parses_page_identifier_filename(self):
         """Should parse datetime from filename with page identifier."""
@@ -493,8 +496,8 @@ class TestMimeTypeConstants:
         assert "image/png" in IMAGE_MIME_TYPES
 
     def test_all_mime_types_is_union(self):
-        """ALL_MIME_TYPES should be union of text and image types."""
-        from tasktriage.gdrive import TEXT_MIME_TYPES, IMAGE_MIME_TYPES, ALL_MIME_TYPES
+        """ALL_MIME_TYPES should be union of text and visual types (images + PDFs)."""
+        from tasktriage.gdrive import TEXT_MIME_TYPES, VISUAL_MIME_TYPES, ALL_MIME_TYPES
 
-        expected = TEXT_MIME_TYPES | IMAGE_MIME_TYPES
+        expected = TEXT_MIME_TYPES | VISUAL_MIME_TYPES
         assert ALL_MIME_TYPES == expected

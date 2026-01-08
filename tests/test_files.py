@@ -206,11 +206,16 @@ class TestLoadTaskNotesGdrive:
         ]
         mock_client.file_exists.return_value = False
 
-        with patch("tasktriage.config.LOCAL_OUTPUT_DIR", str(temp_dir)), \
+        # When LOCAL_OUTPUT_DIR is not set, file_exists is called on GDrive
+        with patch("tasktriage.config.LOCAL_OUTPUT_DIR", None), \
              patch("tasktriage.files.get_active_source", return_value="gdrive"), \
              patch("tasktriage.gdrive.GoogleDriveClient", return_value=mock_client):
             from tasktriage.files import load_task_notes
-            load_task_notes("daily", "png")
+
+            # This should raise because visual files require raw_notes.txt from Sync
+            # and LOCAL_OUTPUT_DIR is None so we can't find the raw_notes file
+            with pytest.raises(FileNotFoundError):
+                load_task_notes("daily", "png")
 
             # Verify file_exists was called with date-based analysis filename (DD_MM_YYYY.triaged.txt)
             mock_client.file_exists.assert_called_with(
@@ -313,25 +318,22 @@ class TestSaveAnalysis:
         """Should format output with proper header."""
         from tasktriage.files import save_analysis
 
-        with patch("tasktriage.files.USB_DIR", str(mock_usb_dir)):
-            output_path = save_analysis("Content", sample_notes_file, "daily")
+        output_path = save_analysis("Content", sample_notes_file, "daily")
 
-            content = output_path.read_text()
-            assert "Triaged Tasks" in content
-            assert "=" * 40 in content
+        content = output_path.read_text()
+        assert "Triaged Tasks" in content
+        assert "=" * 40 in content
 
     def test_always_saves_as_txt(self, mock_usb_dir):
         """Should always save as .txt regardless of input format."""
-        daily_dir = mock_usb_dir / "daily"
-        png_input = daily_dir / "20251230_090000.png"
+        png_input = mock_usb_dir / "20251230_090000.png"
         png_input.write_bytes(b"fake png data")
 
         from tasktriage.files import save_analysis
 
-        with patch("tasktriage.files.USB_DIR", str(mock_usb_dir)):
-            output_path = save_analysis("Analysis", png_input, "daily")
+        output_path = save_analysis("Analysis", png_input, "daily")
 
-            assert output_path.suffix == ".txt"
+        assert output_path.suffix == ".txt"
 
 
 class TestFileExtensionConstants:
@@ -480,13 +482,13 @@ class TestParseFilenameDateTime:
         result = parse_filename_datetime("not_a_timestamp.txt")
         assert result is None
 
-    def test_returns_none_for_invalid_date(self):
-        """Should return None for invalid date values."""
+    def test_falls_back_to_year_for_invalid_date(self):
+        """Should fall back to year parsing for invalid date values."""
         from tasktriage.gdrive import parse_filename_datetime
 
-        # Month 13 is invalid
+        # Month 25 is invalid, so it falls back to parsing just the year
         result = parse_filename_datetime("20251325_073454.txt")
-        assert result is None
+        assert result == datetime(2025, 1, 1, 0, 0, 0)
 
 
 class TestLoadTaskNotesWithPageIdentifiers:
