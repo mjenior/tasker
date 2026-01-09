@@ -858,8 +858,8 @@ HELP_TEXT = """TaskTriage uses Claude AI to turn your handwritten task notes int
 **Recommended Workflow: Sync → Edit → Analyze**
 
 **Left Panel (Controls)**
-- **Sync Button** (run first!) - Copies raw notes from input directories, converts images/PDFs to editable `.raw_notes.txt` files, and syncs everything across all configured directories
 - **Analyze Button** - Generates daily analyses for synced files. Weekly/monthly/annual analyses auto-trigger when conditions are met
+- **Sync Button** (run first!) - Copies raw notes from input directories, converts images/PDFs to editable `.raw_notes.txt` files, and syncs everything across all configured directories
 - **Configuration** - Edit `.env` and `config.yaml` settings directly in the browser
 - **Raw Notes List** - Browse `.txt` and image files from your notes directory
 - **Analysis Files List** - Browse generated analysis files across daily/weekly/monthly/annual
@@ -967,13 +967,8 @@ def main():
         # Triage Button
         st.markdown('<p class="section-header">Actions</p>', unsafe_allow_html=True)
 
+        # Define triage_disabled before using it
         triage_disabled = st.session_state.triage_running or notes_dir is None
-        if st.button("🔍 Analyze", type="primary", disabled=triage_disabled,
-            use_container_width=True, key="btn_triage",
-            help="Analyze synced files. Image/PDF files require Sync first. Weekly/monthly/annual auto-trigger."):
-            st.session_state.triage_running = True
-            st.session_state.triage_progress = []
-            st.rerun()
 
         if st.button("🔄 Sync", type="secondary", disabled=triage_disabled,
             use_container_width=True, key="btn_sync",
@@ -1022,6 +1017,14 @@ def main():
                         with st.expander(f"⚠️ {len(stats['errors'])} Errors"):
                             for error in stats["errors"]:
                                 st.error(error)
+
+        # Analyze button
+        if st.button("🔍 Analyze", type="primary", disabled=triage_disabled,
+            use_container_width=True, key="btn_triage",
+            help="Analyze synced files. Weekly/monthly/annual auto-trigger."):
+            st.session_state.triage_running = True
+            st.session_state.triage_progress = []
+            st.rerun()
 
         with st.expander("Configuration", expanded=False):
             env_config = load_env_config()
@@ -1371,20 +1374,20 @@ def main():
             st.markdown("#### Notes Source Status")
 
             try:
+                if is_local_input_available():
+                    st.success(f"✓ Local Input: {LOCAL_INPUT_DIR}")
+                else:
+                    st.warning("✗ Local Input not found")
+            except Exception:
+                st.warning("✗ Local Input not configured")
+                
+            try:
                 if is_usb_available():
                     st.success(f"✓ USB Input: {EXTERNAL_INPUT_DIR}")
                 else:
                     st.warning("✗ USB Input not found")
             except Exception:
                 st.warning("✗ USB Input not configured")
-
-            try:
-                if is_local_input_available():
-                    st.success(f"✓ Local Input: {LOCAL_INPUT_DIR}")
-                else:
-                    st.info("Local Input not configured (optional)")
-            except Exception:
-                st.info("Local Input not configured (optional)")
 
             try:
                 if is_gdrive_available():
