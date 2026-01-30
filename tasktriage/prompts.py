@@ -19,13 +19,12 @@ Analyze the provided task list to assess what was completed, what was abandoned,
 
 The input is a handwritten task list with the following structure:
 
-- **Category headers**: Each group of tasks is preceded by a category name (e.g., "Work", "Home", "Personal"). Use these headers to determine whether tasks are work-related or home/personal tasks.
-- **Tasks**: Listed as a different task per line indented below each category header
-- **Task markers** (appear to the right of each task):
+- **Tasks**: Listed as a different task per line with no categorical organization
+- **Task markers** (appear to the left of each task):
   - `✓` (checkmark) = Task completed during the day
   - `✗` (or X) = Task removed or abandoned during the day
-  - `*` (asterisk) = Task marked as urgent/high-priority
   - No marker = Standard task that was planned but not completed
+- **Critical Tasks**: Marked with a `*` (asterisk) to the right are urgent/high-priority
 - **Task descriptions**: May vary in clarity, scope, and completeness.
 
 ## Output Format
@@ -64,25 +63,52 @@ Produce a structured analysis with the header "# Daily Execution Analysis — {c
 
 ---
 
-## C. Priority Alignment Assessment
+## C. Task Categorization by Trend
+
+[Automatically group tasks into thematic categories based on content analysis, NOT source categories]
+- Identify natural groupings (e.g., "Communication", "Planning", "Implementation", "Administrative", etc.)
+- List each task under its thematic category
+- Include completion status and energy level for each task
+- Identify which themes had successful completion vs. deferred execution
+
+---
+
+## D. Priority Alignment Assessment
 
 [2-3 paragraphs analyzing whether urgent tasks were truly urgent, whether priorities aligned with execution, and whether energy levels matched task scheduling]
 
 ---
 
-## D. Workload Realism Evaluation
+## E. Workload Realism Evaluation
 
 [2-3 paragraphs assessing whether the planned workload was realistic, whether time estimates were accurate, and whether the day stayed within healthy limits (6-7 hours focused work)]
 
 ---
 
-## E. Task Design Quality
+## F. Task Design Quality
 
 [3-4 sentences evaluating task clarity, specificity, scope appropriateness, and whether task descriptions supported or hindered execution]
 
 ---
 
-## F. Key Takeaways for Future Planning
+## G. Tomorrow's Priority Queue
+
+[Ranked list of incomplete tasks for the following day, ordered by recommended execution priority]
+
+**High Priority (Start First):**
+1. Task name - [Why: Brief rationale]
+2. Task name - [Why: Brief rationale]
+
+**Medium Priority (Core Work):**
+1. Task name - [Why: Brief rationale]
+2. Task name - [Why: Brief rationale]
+
+**Lower Priority (If Time Permits):**
+1. Task name - [Why: Brief rationale]
+
+---
+
+## H. Key Takeaways for Future Planning
 
 [3-5 specific, actionable recommendations based on today's execution patterns]
 
@@ -110,24 +136,42 @@ For each task in the input:
 Look across all tasks to identify patterns such as:
 - **Task type patterns**: Which types of tasks consistently get completed vs. deferred?
 - **Energy patterns**: Were high-energy tasks completed early or avoided?
-- **Category patterns**: Did work tasks crowd out personal tasks, or vice versa?
 - **Clarity patterns**: Did vague tasks get deferred while specific tasks got done?
 - **Urgency patterns**: Did urgent markers (*) correlate with actual completion?
 - **Scope patterns**: Were oversized tasks abandoned while right-sized tasks succeeded?
+- **Time estimation patterns**: Were certain types of tasks over/underestimated?
 
 Present 3-5 concrete observations that reveal systematic behavior.
 
-### Step 3: Assess Priority Alignment
+### Step 3: Analyze Task Categorization by Trend
+
+Automatically group completed, abandoned, and incomplete tasks into thematic categories based on their content and nature. Examples of thematic groupings might include:
+- **Communication**: Messages, emails, calls, feedback delivery
+- **Planning/Strategy**: Planning tasks, strategic work, roadmapping
+- **Implementation/Execution**: Hands-on building, coding, creating
+- **Administrative**: Scheduling, filing, process work, cleanup
+- **Research/Learning**: Investigation, reading, skill development
+- **Meetings/Collaboration**: Meetings, pair work, discussions
+- **Health/Wellness**: Exercise, nutrition, self-care
+- **Personal Projects**: Home projects, personal development
+
+For each theme, note:
+- Total tasks in that category
+- Completion rate (what percentage was completed)
+- Energy levels typical for that theme
+- Patterns in whether that theme succeeded or struggled
+
+### Step 4: Assess Priority Alignment
 
 Critically evaluate:
 - **Urgent task analysis**: Did tasks marked with `*` actually get completed? If not, why? If yes, were they genuinely urgent in hindsight?
 - **Implicit priorities**: What does the completion pattern reveal about actual priorities vs. stated priorities?
-- **Work-life balance**: Did the completion pattern favor work over personal tasks, or maintain intended balance?
+- **Theme-based prioritization**: Which thematic categories received attention and which were deferred?
 - **Energy alignment**: Were high-energy tasks scheduled and executed at appropriate times, or were they attempted when energy was low?
 
 Provide 2-3 paragraphs with specific examples from the task list.
 
-### Step 4: Evaluate Workload Realism
+### Step 5: Evaluate Workload Realism
 
 Assess whether the planned workload was achievable:
 - **Total planned time**: Sum estimated time for all tasks (completed + abandoned + incomplete)
@@ -139,7 +183,7 @@ Assess whether the planned workload was achievable:
 
 Provide 2-3 paragraphs analyzing the realism of the workload and accuracy of estimates.
 
-### Step 5: Evaluate Task Design Quality
+### Step 6: Evaluate Task Design Quality
 
 Assess how task descriptions influenced execution:
 - **Clarity**: Were tasks specific and outcome-oriented, or vague and activity-oriented?
@@ -149,7 +193,35 @@ Assess how task descriptions influenced execution:
 
 Identify 2-3 specific examples of well-designed vs. poorly-designed tasks and their impact on execution.
 
-### Step 6: Generate Key Takeaways
+### Step 7: Prioritize Incomplete Tasks for Tomorrow
+
+For all incomplete tasks (unmarked or unfinished), create a prioritized queue for the next day:
+
+**High Priority** tasks should be:
+- Tasks with external deadlines or dependencies
+- Tasks that block other work
+- Critical path items
+- Tasks that are smaller/more achievable (builds momentum)
+- Aligned with peak energy times
+
+**Medium Priority** tasks should be:
+- Important but non-urgent work
+- Tasks that support longer-term goals
+- Moderately scoped work
+
+**Lower Priority** tasks should be:
+- Nice-to-have additions
+- Tasks that could slip further without major impact
+- Larger/more exploratory work that's time-flexible
+
+For each incomplete task, include a brief rationale explaining why it's placed at its priority level. Consider:
+- Impact if not done
+- Dependencies on other work
+- Energy requirements and when energy is likely available
+- Task size and available time slots
+- Any patterns from today's execution that inform tomorrow's scheduling
+
+### Step 8: Generate Key Takeaways
 
 Based on the day's patterns, provide 3-5 specific, actionable recommendations such as:
 - **Improved task design**: "Write tasks as outcomes (e.g., 'Send budget summary') rather than activities (e.g., 'work on budget')"
@@ -157,7 +229,7 @@ Based on the day's patterns, provide 3-5 specific, actionable recommendations su
 - **Priority refinement**: "Reserve `*` markers for genuine same-day deadlines, not aspirational importance"
 - **Workload calibration**: "Today's plan included 9 hours of work; aim for 6-7 hours to maintain realistic execution"
 - **Energy alignment**: "Schedule high-energy tasks before 2pm based on observed completion patterns"
-- **Category balance**: "Personal tasks consistently deferred; protect 1-2 hours daily for non-work priorities"
+- **Theme focus**: "Administrative tasks consumed 40% of the day; consider batching or delegating to reclaim capacity"
 
 Ground all recommendations in observed behavior from today's execution.
 
@@ -200,19 +272,18 @@ A task marked urgent but repeatedly deferred was not actually a priority. A task
 
 ## Input Format
 
-You will receive 5–7 daily execution plans, each containing:
-- **Date header**: The day the plan was created
-- **Numbered task list**: Tasks with energy levels, time estimates, and sub-steps
-- **Markers on original tasks**:
-  - `✓` = Completed
-  - `✗` = Removed/abandoned
-  - `*` = Originally marked urgent
-- **Split labels**: `[Today Portion]` and `[Later Portion]` for oversized tasks
-- **Deferred Tasks section**: Tasks moved to later dates
-- **Completed Tasks Review**: Analysis of tasks already completed before planning, including observations about early execution patterns
-- **Critical Assessment**: Observations about that day's planning
+You will receive 5–7 daily execution analyses (from the Daily Execution Analysis reports), each containing:
+- **Date header**: The date of the analysis
+- **Completion Summary**: Completed, abandoned, and incomplete tasks with energy levels and time estimates
+- **Execution Patterns**: Observed patterns across task types and energy levels
+- **Task Categorization by Trend**: Tasks automatically grouped into thematic categories (Communication, Planning, Implementation, Administrative, etc.) with completion rates per theme
+- **Priority Alignment Assessment**: Analysis of whether urgent markers correlated with actual completion
+- **Workload Realism Evaluation**: Assessment of planned vs. actual work time and time estimate accuracy
+- **Task Design Quality**: Evaluation of task clarity and specificity
+- **Tomorrow's Priority Queue**: Ranked incomplete tasks for the next day (High/Medium/Lower priority tiers with rationales)
+- **Key Takeaways**: Actionable recommendations from that day's execution
 
-Each plan represents both the intended execution and (via ✓/✗ markers) the actual outcome. The Completed Tasks Review provides insight into what actually gets done early in the day.
+Each analysis reveals both the day's actual execution outcomes and thematic patterns in task completion across different work types. The Priority Queue provides insight into how well future days are being planned based on execution patterns.
 
 ## Output Format
 
@@ -241,12 +312,13 @@ Structure your analysis with these exact section headers:
 
 ### Section A: Key Behavioral Findings
 
-Identify across the full week:
+Identify across the full week using both completion status and thematic categorization data:
+- **Thematic success patterns**: Which task categories (from daily categorizations) consistently completed vs. deferred? (e.g., "Communication tasks completed 90%, Implementation tasks completed 40%")
 - Tasks consistently completed on first appearance (true priorities)
 - Tasks deferred multiple times (priority mismatches)
 - Tasks repeatedly removed after deferral (planning failures)
 - High-priority tasks left unfinished vs. low-impact tasks completed
-- Early completion patterns from Completed Tasks Reviews (what gets done before planning)
+- **Priority queue accuracy**: How well did daily priority queues predict which tasks actually got completed the following day?
 - Any notable wins or improvements worth reinforcing
 
 Present as 3–5 concise bullet points focused on patterns, not isolated incidents.
@@ -255,39 +327,45 @@ Present as 3–5 concise bullet points focused on patterns, not isolated inciden
 
 Critically assess:
 - Did urgent (`*`) tasks earn their priority in practice?
+- **Theme-based priority failures**: Which thematic task categories were marked urgent but failed to complete? Which themes were not marked urgent but consistently completed?
 - Were high-energy tasks scheduled at appropriate times?
-- Did low-value urgent tasks crowd out meaningful work?
-- How did work vs. home prioritization hold up under real conditions?
+- Did low-value urgent tasks crowd out meaningful work across different themes?
+- **Priority queue effectiveness**: How accurate were the daily priority queues? Did ranked High Priority tasks actually complete more often than Lower Priority tasks?
 
-Provide specific examples with task names and dates. Be candid about recurring errors and their likely causes.
+Provide specific examples with task names, themes, and dates. Be candid about recurring errors and their likely causes.
 
 ### Section C: Corrected Priority Model
 
-Generate an updated priority model using observed behavior:
+Generate an updated priority model using observed behavior, organized by thematic task categories:
 
-1. **Re-qualify urgency**: Which task types actually deserve `*` marking next week based on completion patterns?
+1. **Theme-based prioritization**: Which thematic categories (Communication, Planning, Implementation, etc.) should receive highest priority next week based on completion rates and impact?
 
-2. **Promotion rules**: Tasks completed when scheduled should maintain or increase priority.
+2. **Re-qualify urgency by theme**: For each theme, which task types actually deserve `*` marking based on completion patterns and outcomes?
 
-3. **Demotion rules**: Tasks deferred 2+ times should be:
+3. **Promotion rules**: Tasks in themes that consistently completed should maintain or increase priority allocation. Themes with high completion rates for high-energy work should be scheduled earlier in the day.
+
+4. **Demotion rules**: Tasks in themes that were repeatedly deferred should be:
    - Split into smaller pieces
    - Redesigned with clearer outcomes
    - Moved to a project list (not daily tasks)
    - Deleted if not truly important
 
-4. **Gravity task limits**: Identify recurring "gravity tasks" (email, admin, cleanup) that absorb time and cap their daily allocation.
+5. **Gravity task limits by theme**: Identify recurring "gravity tasks" within each theme (e.g., administrative communication, routine meetings) that absorb time and cap their daily allocation.
+
+6. **Daily priority queue refinement**: Use this week's priority queue accuracy data to improve next week's queue construction—if certain themes' ranked tasks were consistently bypassed, adjust theme placement or task specification.
 
 ### Section D: Next-Week Planning Strategy
 
 Provide practical guidance including:
 
-- **Capacity assumptions**: Realistic daily hours based on this week's actual output
-- **High-energy task limits**: Recommended count per day based on observed completion
-- **Keystone tasks**: Identify 2–3 tasks that, if completed, would make the week successful
-- **Day typing**: Suggest which days should be Heavy (4+ hours deep work), Medium, or Light
-- **Admission criteria**: What qualifies as a legitimate daily task vs. what belongs on a project list
-- **Pre-splitting guidance**: Which known large tasks should be split before they hit the daily list
-- **Early execution leverage**: Based on Completed Tasks Reviews, identify optimal morning routines and task types that succeed before formal planning begins
+- **Capacity assumptions**: Realistic daily hours based on this week's actual output, informed by theme-specific completion rates
+- **High-energy task limits by theme**: Recommended count per day of high-energy tasks from themes that succeed vs. struggle
+- **Keystone tasks by theme**: Identify 2–3 high-impact tasks per week, with focus on themes showing low completion rates
+- **Day typing**: Suggest which days should be Heavy (4+ hours deep work), Medium, or Light—informed by observed energy patterns within themes
+- **Admission criteria**: What qualifies as a legitimate daily task vs. what belongs on a project list; consider theme-based task sizing
+- **Pre-splitting guidance**: Which known large tasks should be split before they hit the daily list, with special attention to themes that repeatedly deferred
+- **Priority queue construction**: Specific guidance for next week's daily priority queues—which themes should lead each day, and what energy/time allocation per theme
+- **Theme balance**: Recommended daily allocation across themes based on this week's completion data (e.g., "40% Communication, 30% Implementation, 20% Planning, 10% Administrative")
 
 Ground all recommendations in this week's actual behavior, not aspirational ideals.
 
@@ -344,15 +422,15 @@ Week-to-week tactical adjustments are valuable, but month-level patterns reveal:
 
 ## Input Format
 
-You will receive 4–5 weekly execution analyses, each containing:
+You will receive 4–5 weekly execution analyses (synthesized from 5–7 daily execution analyses), each containing:
 - **Week date range**: The period covered by that week's analysis
-- **Key Behavioral Findings**: Patterns identified within that week
-- **Mis-Prioritization Insights**: Tactical priority errors observed
-- **Corrected Priority Model**: Weekly adjustments to prioritization
-- **Next-Week Planning Strategy**: Tactical guidance for the following week
-- **System Improvement Recommendations**: Process changes suggested
+- **Key Behavioral Findings**: Patterns identified across the week's daily analyses
+- **Mis-Prioritization Insights**: Tactical priority errors and urgency mismatches observed
+- **Corrected Priority Model**: Weekly adjustments to prioritization based on behavior
+- **Next-Week Planning Strategy**: Tactical guidance for the following week, including capacity assumptions and admission criteria
+- **System Improvement Recommendations**: Process changes suggested based on observed patterns
 
-Each weekly analysis represents both observed behavior patterns and attempted corrections. Track whether recommended changes were implemented and if they improved outcomes in subsequent weeks.
+Each weekly analysis synthesizes daily execution data, including observations about which thematic task categories (from daily trend categorizations) succeeded vs. struggled, and how well the daily priority queues predicted actual execution. Track whether recommended changes were implemented and if they improved outcomes in subsequent weeks.
 
 ## Output Format
 
@@ -411,14 +489,14 @@ Focus on concrete outcomes, not effort expended. Group related smaller tasks int
 ### Section B: Strategic Patterns and Trends
 
 Identify 3–5 month-level patterns such as:
+- **Thematic completion trends**: Which task categories (Communication, Planning, Implementation, Administrative, etc.) showed consistent success vs. struggle across the month? Did theme-specific completion rates change from week to week?
 - **Execution rhythms**: Weekly cycles (strong Mondays vs. weak Fridays), energy patterns, productive vs. struggling weeks
-- **Category performance**: Which types of work consistently succeed vs. struggle
-- **Capacity trends**: How actual output compares across weeks; whether planning has become more realistic
-- **Priority stability**: Are top priorities consistent or constantly shifting?
-- **Completion momentum**: Trends in task completion rates over the month
-- **Planning accuracy**: Are time estimates and energy assessments improving?
+- **Theme performance by category**: Which work domains (Professional, Personal, System/Meta) aligned best with which task themes?
+- **Capacity trends**: How actual output in each theme compares across weeks; whether planning has become more realistic
+- **Priority accuracy**: Are urgent tasks genuinely urgent in hindsight? Did priority queues improve across the month?
+- **Completion momentum**: Trends in overall completion rates and whether certain themes accelerated or decelerated
 
-Provide specific evidence from multiple weeks. Distinguish between one-time events and genuine patterns.
+Provide specific evidence from multiple weeks. Distinguish between one-time events and genuine patterns. Use theme data from daily categorizations and weekly summaries as evidence.
 
 ### Section C: System Evolution Assessment
 
@@ -434,16 +512,17 @@ Be honest about what didn't work. Successful planning systems require iteration.
 ### Section D: Persistent Challenges
 
 Identify problems that resisted weekly tactical corrections:
+- **Theme-specific failures**: Which thematic task categories (from daily/weekly categorizations) were repeatedly deferred or abandoned across multiple weeks? Did the same themes struggle throughout the month?
 - Tasks or task types repeatedly deferred across multiple weeks
 - Planning anti-patterns that continue despite awareness
-- External factors (meetings, interruptions, energy) that consistently disrupt plans
-- Skill gaps or resource constraints blocking progress
-- Structural issues (unclear outcomes, oversized tasks, misaligned priorities)
+- External factors (meetings, interruptions, energy) that consistently disrupt plans, particularly affecting specific themes
+- Skill gaps or resource constraints blocking progress in certain task categories
+- Structural issues (unclear outcomes, oversized tasks, misaligned priorities, especially within struggling themes)
 
 Distinguish between:
-1. **Tactical issues** (can be addressed with better weekly planning)
-2. **Systemic issues** (require fundamental changes to work structure or planning approach)
-3. **External constraints** (require negotiation, delegation, or acceptance)
+1. **Tactical issues** (can be addressed with better weekly planning or theme repositioning)
+2. **Systemic issues** (require fundamental changes to work structure, theme balance, or planning approach)
+3. **External constraints** (require negotiation, delegation, acceptance, or theme deprioritization)
 
 ### Section E: Monthly Performance Metrics
 
@@ -451,24 +530,28 @@ Provide both quantitative and qualitative assessment:
 
 **Completion Metrics:**
 - Approximate percentage of planned tasks completed vs. deferred vs. removed
-- Trend over the month (improving, stable, or declining)
+- **Theme-specific completion rates**: Which thematic categories had highest/lowest completion rates across the month?
+- Trend over the month (improving, stable, or declining overall and per-theme)
 
 **Workload Balance:**
 - Average daily focused work time (target: 6-7 hours)
 - Weeks that exceeded healthy limits vs. weeks with sustainable pace
+- **Theme distribution**: How time was allocated across different task themes
 
 **Priority Alignment:**
 - Were urgent tasks genuinely urgent in hindsight?
 - Did high-priority work receive appropriate time allocation?
 - How often did low-priority work crowd out important tasks?
+- **Priority queue accuracy**: How well did daily priority queues predict execution across the month?
 
 **Energy Management:**
 - Alignment between energy levels and task scheduling
-- Patterns in when high-energy work succeeds vs. fails
+- Patterns in when high-energy work succeeds vs. fails, particularly by theme
 
 **Planning Quality:**
 - Trend in task clarity and specificity
 - Improvement in realistic scoping and time estimates
+- **Theme-specific improvements**: Did certain themes show improved task design quality over the month?
 
 ### Section F: Strategic Guidance for Next Month
 
@@ -477,30 +560,31 @@ Provide month-level direction including:
 **Strategic Priorities:**
 - 3–5 keystone objectives that should guide next month's planning
 - Clear success criteria for each priority
-- Recommended weekly time allocation per priority
+- **Theme-based allocation**: Recommended allocation of time and effort across task themes for the upcoming month (informed by this month's performance data)
 
 **Capacity Planning:**
-- Realistic weekly capacity based on this month's data
+- Realistic weekly capacity based on this month's data, broken down by theme
 - Expected external demands (meetings, deadlines, events)
-- Buffer allocation for unpredictable work
+- Buffer allocation for unpredictable work, particularly in themes that showed volatility
 
-**Category Focus:**
-- Which categories of work deserve increased attention
-- Which categories should be deprioritized or delegated
-- Balance between work, personal, and system improvements
+**Theme Focus and Balance:**
+- Which thematic task categories deserve increased time/focus next month
+- Which themes should be deprioritized, delegated, or reduced
+- Recommended daily distribution across themes for sustainable execution
+- Whether theme balance shifted appropriately from this month
 
 **Rhythm and Pacing:**
 - Recommended weekly intensity patterns (e.g., alternating heavy/light weeks)
-- Strategic timing for high-energy vs. administrative work
-- Planned recovery periods
+- Strategic timing for high-energy vs. administrative work, particularly by theme
+- Planned recovery periods and how they align with theme cycles
 
 **Pre-Emptive Splitting:**
-- Known large tasks or projects that should be decomposed before entering daily planning
-- Recommended approach for each major initiative
+- Known large tasks or projects that should be decomposed before entering daily planning, with special attention to themes that struggled with large tasks
+- Recommended approach for each major initiative, considering theme-specific success rates for similar work
 
 **System Priorities:**
-- Top 2–3 planning system improvements to attempt
-- Specific metrics to track improvement
+- Top 2–3 planning system improvements to attempt, informed by theme-based insights
+- Specific metrics to track improvement, including theme-specific completion rates and priority queue accuracy
 
 Ground all recommendations in this month's observed patterns, not aspirational goals.
 
@@ -554,14 +638,14 @@ Analyze the monthly execution reports from the past calendar year to:
 
 ## Input Format
 
-You will receive 12 monthly execution reports (one for each month of the year), each containing:
-- Monthly achievements summary (accomplishments by category)
-- Strategic patterns and trends
-- System evolution assessment
-- Persistent challenges
-- Monthly performance metrics
-- Strategic guidance
-- System refinements attempted
+You will receive 12 monthly execution reports (one for each month of the year), each synthesizing 4–5 weekly analyses, which in turn synthesized daily execution analyses. Each report contains:
+- Monthly achievements summary (accomplishments by category, synthesized from weekly data)
+- Strategic patterns and trends (patterns across weeks, including thematic task category performance)
+- System evolution assessment (tracking which weekly and daily recommendations were actually implemented)
+- Persistent challenges (including task themes that consistently struggled or were repeatedly deferred)
+- Monthly performance metrics (completion rates, workload balance, priority alignment across the month's daily and weekly cycles)
+- Strategic guidance (month-level priorities informed by daily/weekly execution patterns)
+- System refinements attempted (process changes recommended and their effectiveness)
 
 ## Output Format
 
@@ -614,94 +698,97 @@ Avoid listing effort without outcome. "Worked on X" is not an accomplishment; "C
 
 ### Section B: Learning & Skill Development
 
-Identify genuine learning and growth:
+Identify genuine learning and growth across the year:
 
 **Skills with Evidence:**
 - Technical skills developed with examples of application
 - Leadership or interpersonal skills with behavioral evidence
-- Domain expertise or knowledge gained
+- Domain expertise or knowledge gained, particularly reflected in task theme mastery
 - Problem-solving approaches learned and applied
+- **Task execution mastery**: Improvement in which thematic task categories over the year? (e.g., "Communication efficiency improved 40% from Q1 to Q4 based on theme completion rates")
 - Systems thinking or strategy capabilities developed
 
 **Mindset Shifts:**
-- New frameworks or mental models adopted
-- Changed approaches to familiar problems
-- Accepted limitations or realities
-- Deepened self-knowledge about work style
+- New frameworks or mental models adopted about work organization and theme management
+- Changed approaches to familiar problem areas, particularly reflected in theme-specific priority adjustments
+- Accepted limitations or realities about capacity, energy, or theme viability
+- Deepened self-knowledge about which task types/themes align best with your work style and energy
 
 **Where Was Growth Fastest?**
-- What domains had the steepest learning curve?
-- What surprised you about what you learned?
-- Where did you get the most useful feedback?
+- What themes or domains had the steepest learning curve?
+- Which themes showed the most improvement in completion rates from early to late year?
+- What surprised you about what you learned regarding task execution?
+- Where did priority queue accuracy and theme-based planning show greatest improvement?
 
-Ground all claims in specific evidence from the monthly reports. "Learned more about X" needs supporting examples.
+Ground all claims in specific evidence from the monthly reports and year's thematic performance data. "Learned more about X" needs supporting examples and completion rate evidence.
 
 ### Section C: Highest-Impact Opportunities
 
 Identify 2-4 specific improvements that would have the largest ROI next year. These are NOT comprehensive lists—ruthlessly prioritize.
 
 **Analysis Approach:**
-- Look for persistent challenges that appeared in multiple months
-- Identify bottlenecks that cascaded into multiple other problems
-- Find patterns where fixing one thing would unlock others
+- Look for persistent challenges that appeared in multiple months, particularly themes that consistently underperformed
+- Identify bottlenecks that cascaded into multiple other problems (e.g., a theme whose failures blocked other themes)
+- Find patterns where fixing one thing would unlock others (e.g., improving Planning theme completion might improve overall Implementation success)
 - Calculate rough ROI: Impact × Likelihood of Success × Effort
 
 **For Each Opportunity, Include:**
-1. **The Issue**: Concrete description of what's not working
-2. **Why It Matters**: Expected ROI and cascading benefits
-3. **Root Cause**: What's actually driving this (not the symptom)
-4. **Specific Intervention**: Concrete, measurable change to try
-5. **Success Criteria**: How you'll know it's working
+1. **The Issue**: Concrete description of what's not working, including theme-specific data (e.g., "Communication tasks have 35% completion rate despite being consistently ranked High Priority")
+2. **Why It Matters**: Expected ROI and cascading benefits (e.g., "Poor Communication completion is blocking Collaboration theme work; fixing this could unlock 2 hours/week")
+3. **Root Cause**: What's actually driving this (not the symptom)—consider theme structure, energy alignment, task design, or priority modeling
+4. **Specific Intervention**: Concrete, measurable change to try, potentially including theme-based recommendations
+5. **Success Criteria**: How you'll know it's working, potentially tracked by theme-specific metrics
 
 Examples of high-leverage improvements:
-- "Reduce email context-switching from 47 daily interruptions to 4 scheduled batches → estimated +2 hours/day of focused work"
-- "Clarify decision-making authority with team → eliminate 30% of meeting time spent on ambiguous decisions"
-- "Implement Sunday planning ritual → reduce Monday morning panic and improve week alignment by 40%"
-- "Hire contractor for [specific task] → free 8 hours/week for strategic work"
+- "Communication theme completion improved from 45% to 80% through batching emails and calls into dedicated slots → estimated +3 hours/week freed for focused work"
+- "Reduced Administrative theme from 25% of daily time to 15% through delegation and batching → freed 1 hour/day for Implementation (high-value) work"
+- "Implemented Sunday theme-based planning ritual → improved priority queue accuracy from 55% to 85% and reduced Monday execution chaos by 60%"
+- "Split oversized Planning theme tasks before they hit daily list → improved Planning completion from 40% to 75%"
 
 **Do NOT recommend**:
 - Vague improvements like "be more organized"
-- Changes with unclear ROI
+- Changes with unclear ROI or theme-specific impact data
 - Things that should have been done already
-- Solutions that create new problems
+- Solutions that create new problems or overload a different theme
 
 ### Section D: Year-Ahead Strategic Direction
 
-Provide month-level strategic direction:
+Provide month-level strategic direction informed by year's thematic patterns:
 
 **Q1-Q2 Focus:**
-- 2-3 keystone objectives
-- Capacity allocation by category
-- Early wins needed to build momentum
-- Likely obstacles to pre-plan for
+- 2-3 keystone objectives, considering which themes need foundational work
+- **Theme-based capacity allocation**: Recommended distribution across task themes for H1 based on year's performance
+- Early wins needed to build momentum, prioritizing improvement in consistently struggling themes
+- Likely obstacles to pre-plan for, particularly in themes that showed seasonal variation
 
 **Q3-Q4 Focus:**
-- Strategic priorities building on H1 momentum
-- Major initiatives or commitments
-- Consolidation and integration of earlier work
+- Strategic priorities building on H1 momentum, including theme-specific improvements
+- Major initiatives or commitments, with awareness of which themes they'll consume
+- Consolidation and integration of earlier work, including testing theme-based refinements
 
 **Monthly Rhythm:**
-- Recommended intensity pattern (heavy vs. light months)
-- Known constraints (vacation, commitments, external deadlines)
-- Seasonal patterns observed in the year's data
+- Recommended intensity pattern (heavy vs. light months), informed by year's observed cycles
+- Known constraints (vacation, commitments, external deadlines) and their impact on theme allocation
+- **Theme focus rotation**: Which themes should be emphasized in which months based on patterns and dependencies?
+- Seasonal patterns observed in the year's data, particularly theme-specific seasonal effects
 
 **Resource Allocation:**
-- % of time/energy to work vs. personal vs. system improvement
-- Where to invest for learning ROI
-- What to defend or reduce
+- % of time/energy to each major theme/category of work
+- Where to invest for learning ROI, particularly in themes showing growth potential
+- What to defend or reduce, informed by year-long completion rate data and ROI analysis
 
 ## Quality Standards
 
 Your analysis should:
 - Be ruthlessly focused on the three areas (accomplishments, learning, high-impact improvements)
-- Use specific, quantifiable evidence from the monthly reports
+- Use specific, quantifiable evidence from the monthly reports and theme-based data
 - Celebrate genuine wins without inflating them
-- Identify real patterns from 12 months of data (not one-off events)
-- Distinguish between skill development that stuck vs. temporary effort
+- Identify real patterns from 12 months of data (not one-off events), confirmed across multiple theme tracking
+- Distinguish between skill development that stuck vs. temporary effort, reflected in sustained theme performance improvements
 - Rank opportunities by actual ROI, not urgency or visibility
 - Provide guidance grounded in the year's actual patterns, not aspirations
 - Avoid motivational language—favor clarity and strategic insight
-- Make the year-ahead direction specific enough to guide monthly planning
+- Make the year-ahead direction specific enough to guide monthly planning and theme-based resource allocation
 """
 
 ANNUAL_HUMAN_PROMPT = """\
@@ -718,27 +805,29 @@ Extract all text from the provided image of handwritten task notes, preserving t
 
 ## Output Requirements
 
-1. **Preserve structure exactly**: Maintain category headers, indentation, and task groupings
-2. **Preserve markers**: Include all task markers (✓, ✗, *) in their original positions relative to tasks
-3. **One task per line**: Each task should be on its own line, indented under its category
-4. **Category headers**: Output category names on their own line before their associated tasks
+1. **Preserve markers exactly**: Include all task markers in their original positions relative to tasks:
+   - `✓` (checkmark) = Task completed
+   - `✗` (or X) = Task removed or abandoned
+   - `*` (asterisk) = Urgent/high-priority task
+   - No marker = Standard planned task
+2. **One task per line**: Each task should be on its own line with no indentation or categorical grouping
+3. **No categorical organization**: Extract tasks in a flat list, regardless of how they were organized in the original document
+4. **Preserve task order**: Maintain the order tasks appear in the original document
 5. **No interpretation**: Do not add, remove, or modify any content - transcribe exactly what you see
 6. **Handle unclear text**: If text is unclear, make your best attempt and do not indicate uncertainty
 
 ## Expected Output Format
 
 ```
-Category Name
-    Task 1 description
-    Task 2 description ✓
-    Task 3 description *
-
-Another Category
-    Task A description ✗
-    Task B description
+  Task 1 description
+✓ Task 2 description *
+✓ Task 3 description
+✗ Task 4 description
+  Task 5 description
+  Task 6 description *
 ```
 
-Extract all visible text from the image now, maintaining the exact structure shown."""
+Extract all visible text from the image now, outputting each task on its own line with markers preserved in their original positions."""
 
 
 def get_daily_prompt() -> ChatPromptTemplate:
