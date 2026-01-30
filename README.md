@@ -386,10 +386,10 @@ This lets TaskTriage figure out which file is most recent and which ones have al
 ### Task Notation
 
 How to mark up your handwritten notes:
-- **Task categories**: Draw a single underline above a group of bullets
 - **Completed tasks**: Add a checkmark (✓)
 - **Removed/abandoned tasks**: Mark with an (✗)
-- **Urgent tasks**: Add a star (☆)
+- **Urgent tasks**: Add an asterisk (*)
+- **Task ordering**: List tasks in any order—TaskTriage will automatically analyze and group them by theme (Communication, Planning, Implementation, Administrative, etc.) during analysis
 
 ### Example Files
 
@@ -574,46 +574,49 @@ The daily analysis gives you:
 
 - **Completion Summary**: Clear breakdown of what was completed (✓), abandoned (✗), and left incomplete, with analysis of why each outcome occurred
 - **Execution Patterns**: 3-5 concrete observations about which types of tasks succeed vs. fail, when your energy is highest, and what gets deferred
-- **Priority Alignment Assessment**: Honest evaluation of whether urgent tasks were truly urgent, and what your completion patterns reveal about actual priorities vs. stated priorities
+- **Task Categorization by Trend**: Automatic grouping of your tasks into thematic categories (Communication, Planning, Implementation, Administrative, Research/Learning, Meetings/Collaboration, Health/Wellness, Personal Projects, etc.) with completion rates and energy patterns per theme—reveals which categories of work consistently succeed vs. struggle
+- **Priority Alignment Assessment**: Honest evaluation of whether urgent tasks were truly urgent, theme-based prioritization analysis, and what your completion patterns reveal about actual priorities vs. stated priorities
 - **Workload Realism Evaluation**: Assessment of whether your planned workload was achievable, how accurate your time estimates were, and whether you stayed within healthy limits (6-7 hours focused work)
 - **Task Design Quality**: Analysis of how task clarity, scope, and actionability influenced execution—identifying which tasks were well-designed vs. poorly-designed
-- **Key Takeaways**: 3-5 specific, actionable recommendations for improving future planning based on today's execution patterns
+- **Tomorrow's Priority Queue**: Ranked list of incomplete tasks for the next day, organized by priority tier (High/Medium/Lower) with rationales for each task's placement—informed by today's execution patterns
+- **Key Takeaways**: 3-5 specific, actionable recommendations for improving future planning based on today's execution patterns, including theme-specific focus areas
 
 ## Weekly Analysis Output
 
 The weekly analysis shows you:
 
-- **Completion & follow-through analysis**: Where do you keep deferring stuff?
-- **Mis-prioritization detection**: What you said was important vs. what you actually did
-- **Scope & estimation accuracy**: How wrong were your time estimates? (It's okay, we're all bad at this)
-- **Energy alignment analysis**: Are you scheduling high-energy tasks when you're exhausted?
-- **Corrected priority model** based on your actual behavior, not your aspirational self
-- **Next-week planning strategy** with realistic capacity assumptions and guidance on how to structure your days
+- **Key Behavioral Findings**: Thematic success patterns (e.g., "Communication tasks completed 90%, Implementation tasks completed 40%") and how well daily priority queues predicted actual execution
+- **Completion & follow-through analysis**: Where do you keep deferring stuff, organized by task theme?
+- **Mis-prioritization detection**: What you said was important vs. what you actually did; theme-based priority failures (which themes were marked urgent but failed?)
+- **Scope & estimation accuracy**: How wrong were your time estimates per theme? (It's okay, we're all bad at this)
+- **Energy alignment analysis**: Are you scheduling high-energy tasks by theme when you're exhausted?
+- **Corrected priority model** based on your actual behavior, organized by thematic task categories
+- **Next-week planning strategy** with realistic capacity assumptions, theme-specific guidance, and recommended daily allocation across themes (e.g., "40% Communication, 30% Implementation, 20% Planning, 10% Administrative")
 
 ## Monthly Analysis Output
 
 The monthly analysis synthesizes your entire month to show you:
 
 - **Monthly achievements summary**: Major accomplishments organized by category (Work, Personal, System)
-- **Strategic patterns and trends**: 3-5 month-level patterns like execution rhythms, category performance, capacity trends
-- **System evolution assessment**: Which weekly recommendations actually got implemented? Which ones worked?
-- **Persistent challenges**: Problems that survived multiple weekly corrections—these are the real issues
-- **Monthly performance metrics**: Completion rates, workload balance, priority alignment, energy management, planning quality
-- **Strategic guidance for next month**: Month-level priorities, capacity planning, category focus, recommended pacing
-- **Long-term system refinements**: 3-6 fundamental changes to try in your planning system
+- **Strategic patterns and trends**: 3-5 month-level patterns including thematic completion trends (which task themes consistently succeeded vs. struggled?), execution rhythms, capacity trends, and priority accuracy
+- **System evolution assessment**: Which weekly recommendations actually got implemented? Which ones worked? Did theme-specific improvements stick?
+- **Persistent challenges**: Problems that survived multiple weekly corrections—organized by theme to reveal systemic issues in particular categories of work
+- **Monthly performance metrics**: Completion rates (overall and per-theme), workload balance, priority alignment, energy management, planning quality, and theme-specific improvements
+- **Strategic guidance for next month**: Month-level priorities, theme-based capacity allocation, theme-specific focus areas, and recommended daily distribution across themes
+- **Long-term system refinements**: 3-6 fundamental changes to try in your planning system, informed by theme-specific insights
 
-Monthly analyses are **strategic level**, not tactical. They reveal patterns invisible at the weekly level and help you understand your actual productivity rhythms over time.
+Monthly analyses are **strategic level**, not tactical. They reveal patterns invisible at the weekly level and help you understand which categories of work consistently succeed or struggle, plus your actual productivity rhythms over time.
 
 ## Annual Analysis Output
 
 The annual analysis synthesizes your entire year to show you:
 
 - **Year in accomplishments**: Your major wins and achievements across the full calendar year, organized by category and impact
-- **Learning & skill development**: Areas where you've grown professionally and personally throughout the year, plus knowledge gaps revealed
-- **Highest-impact opportunities**: 2-4 specific improvements that would generate the most leverage in the year ahead, ranked by ROI
-- **Year-ahead strategic direction**: Recommendations for next year's focus areas, capacity planning, and systemic changes based on what you learned
+- **Learning & skill development**: Areas where you've grown professionally and personally, with task execution mastery tracked by theme (e.g., "Communication efficiency improved 40% from Q1 to Q4")
+- **Highest-impact opportunities**: 2-4 specific improvements ranked by ROI that would generate the most leverage in the year ahead, informed by theme-specific performance data and persistent challenges
+- **Year-ahead strategic direction**: Recommendations for next year's focus areas, theme-based capacity allocation, seasonal patterns, and systemic changes based on your year's thematic performance
 
-Annual analyses are **strategic and retrospective**. They help you see the big picture—what you actually accomplished beyond the day-to-day grind, and what's worth focusing on next year. This is where you look back at the full story of your year, not just individual months.
+Annual analyses are **strategic and retrospective**. They help you see the big picture—what you actually accomplished beyond the day-to-day grind, which categories of work have the strongest ROI, and what's worth focusing on next year. This is where you look back at the full story of your year, track improvements in specific task themes, and plan next year's resource allocation.
 
 ## Directory Structure
 

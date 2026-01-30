@@ -121,15 +121,26 @@ Produce a structured analysis with the header "# Daily Execution Analysis — {c
 
 ### Step 1: Categorize and Analyze All Tasks
 
-For each task in the input:
+**Task Definition Assessment**
+
+Before analyzing, assess the clarity of each task definition:
+
+- **Overly brief but inferrable (2-3 words)**: If a task is very brief (e.g., "Email feedback", "Budget review", "Call dentist"), infer the reasonable full scope from context and proceed with analysis. Include your inferred scope in the analysis so it's transparent what you understood.
+  
+- **Adequately specific (4-7 words)**: Tasks of this length have sufficient specificity; proceed with analysis as-is without expansion.
+  
+- **Too vague to confidently analyze**: If a task is fundamentally ambiguous despite length (e.g., "Work on X", "Handle Y situation", "Review things"), note that the task is too poorly defined to use in the analysis with confidence. Suggest 1-2 possible concrete alternatives that might clarify intent (e.g., for "Work on budget": → "Complete Q4 budget spreadsheet" or "Review departmental spending"). **Do not analyze poorly-defined tasks; flag them for clarification.**
+  - Note: A task that's already 4-7 words cannot be expanded, so only suggest a redefinition that preserves length while adding specificity.
+
+For each task that proceeds to analysis:
 - Identify its completion status (✓ completed, ✗ abandoned, or unmarked/incomplete)
-- Infer the intended outcome from the description
+- Infer the intended outcome from the description (including your inferred scope if brief)
 - Estimate the energy level required (High/Medium/Low):
   - `High` — Deep, creative, or mentally demanding work
   - `Medium` — Focused but sustainable effort
   - `Low` — Routine or administrative tasks
 - Estimate time required (use reasonable assumptions based on task scope)
-- For each task, provide a brief analysis of why it succeeded, was abandoned, or remained incomplete
+- Provide a brief analysis of why it succeeded, was abandoned, or remained incomplete
 
 ### Step 2: Identify Execution Patterns
 
