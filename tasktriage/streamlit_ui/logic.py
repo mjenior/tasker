@@ -83,7 +83,7 @@ def run_triage_pipeline(progress_callback) -> dict:
                 else:
                     results["daily"]["failed"] += 1
                     results["daily"]["errors"].append(f"{notes_path.name}: {error_msg}")
-                    progress_callback(f"Failed: {notes_path.name}")
+                    progress_callback(f"⚠️ Failed: {notes_path.name} - {error_msg}")
 
     progress_callback(f"Daily Summary: {results['daily']['successful']} successful, {results['daily']['failed']} failed")
 
@@ -109,7 +109,9 @@ def run_triage_pipeline(progress_callback) -> dict:
             results["weekly"]["successful"] += 1
         except Exception as e:
             results["weekly"]["failed"] += 1
-            results["weekly"]["errors"].append(f"{week_label}: {str(e)}")
+            error_msg = f"{week_label}: {str(e)}"
+            results["weekly"]["errors"].append(error_msg)
+            progress_callback(f"⚠️ Failed: {error_msg}")
 
     if weeks_to_analyze:
         progress_callback(f"Weekly Summary: {results['weekly']['successful']} successful, {results['weekly']['failed']} failed")
@@ -136,7 +138,9 @@ def run_triage_pipeline(progress_callback) -> dict:
             results["monthly"]["successful"] += 1
         except Exception as e:
             results["monthly"]["failed"] += 1
-            results["monthly"]["errors"].append(f"{month_label}: {str(e)}")
+            error_msg = f"{month_label}: {str(e)}"
+            results["monthly"]["errors"].append(error_msg)
+            progress_callback(f"⚠️ Failed: {error_msg}")
 
     if months_to_analyze:
         progress_callback(f"Monthly Summary: {results['monthly']['successful']} successful, {results['monthly']['failed']} failed")
@@ -159,7 +163,9 @@ def run_triage_pipeline(progress_callback) -> dict:
             results["annual"]["successful"] += 1
         except Exception as e:
             results["annual"]["failed"] += 1
-            results["annual"]["errors"].append(f"{year}: {str(e)}")
+            error_msg = f"Year {year}: {str(e)}"
+            results["annual"]["errors"].append(error_msg)
+            progress_callback(f"⚠️ Failed: {error_msg}")
 
     if years_to_analyze:
         progress_callback(f"Annual Summary: {results['annual']['successful']} successful, {results['annual']['failed']} failed")

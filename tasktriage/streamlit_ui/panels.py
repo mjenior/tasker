@@ -301,6 +301,17 @@ def render_triage_progress() -> None:
                         st.success(f"Triage complete! {total_success} analyses successful.")
                     else:
                         st.warning(f"Triage complete. {total_success} successful, {total_failed} failed.")
+                        
+                        # Show error details if there are any failures
+                        all_errors = []
+                        for level, result in results.items():
+                            if result["errors"]:
+                                all_errors.extend(result["errors"])
+                        
+                        if all_errors:
+                            with st.expander(f"⚠️ {len(all_errors)} Error(s) - Details"):
+                                for error in all_errors:
+                                    st.error(error)
 
                     st.rerun()
 

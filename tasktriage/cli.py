@@ -170,7 +170,8 @@ def main():
                     print(f"  ✓ Weekly analysis saved to: {output_path}\n")
                     weekly_successful += 1
                 except Exception as e:
-                    print(f"  ✗ Failed: {e}\n")
+                    print(f"  ✗ Failed to analyze week: {week_label}")
+                    print(f"     Error: {str(e)}\n")
                     weekly_failed += 1
 
             print(f"{'='*50}")
@@ -214,7 +215,8 @@ def main():
                     print(f"  ✓ Monthly analysis saved to: {output_path}\n")
                     monthly_successful += 1
                 except Exception as e:
-                    print(f"  ✗ Failed: {e}\n")
+                    print(f"  ✗ Failed to analyze month: {month_label}")
+                    print(f"     Error: {str(e)}\n")
                     monthly_failed += 1
 
             print(f"{'='*50}")
@@ -256,7 +258,8 @@ def main():
                     print(f"  ✓ Annual analysis saved to: {output_path}\n")
                     annual_successful += 1
                 except Exception as e:
-                    print(f"  ✗ Failed: {e}\n")
+                    print(f"  ✗ Failed to analyze year: {year}")
+                    print(f"     Error: {str(e)}\n")
                     annual_failed += 1
 
             print(f"{'='*50}")
