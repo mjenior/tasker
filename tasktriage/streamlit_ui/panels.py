@@ -5,6 +5,7 @@ Contains all the rendering logic for the left control panel and right editor pan
 """
 
 import os
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import streamlit as st
@@ -25,6 +26,7 @@ from .file_ops import (
     create_new_notes_file,
     select_file,
 )
+from tasktriage.gdrive import parse_filename_datetime
 from .components import render_image_preview, render_quick_markup_tools, render_progress_display
 from .config_ui import render_config_panel
 from .oauth_ui import render_oauth_section
@@ -138,7 +140,28 @@ def render_raw_notes_section(notes_dir: Path) -> None:
     """
     st.markdown('<p class="section-header">Raw Notes</p>', unsafe_allow_html=True)
 
+    # Add slider to filter by maximum age of files
+    max_age_days = st.slider(
+        "Maximum age (days)",
+        min_value=0,
+        max_value=365,
+        value=365,
+        step=1,
+        help="Show only files from the last N days. Set to 365 to show all files."
+    )
+
     raw_notes = list_raw_notes(notes_dir)
+    
+    # Filter files by age if slider is not at maximum
+    if max_age_days < 365 and raw_notes:
+        cutoff_date = datetime.now() - timedelta(days=max_age_days)
+        filtered_notes = []
+        for file_path, display_name in raw_notes:
+            file_date = parse_filename_datetime(file_path.name)
+            if file_date and file_date >= cutoff_date:
+                filtered_notes.append((file_path, display_name))
+        raw_notes = filtered_notes
+    
     if raw_notes:
         # Set default selection if not set
         if st.session_state.raw_notes_selection is None and raw_notes:
@@ -166,6 +189,8 @@ def render_raw_notes_section(notes_dir: Path) -> None:
                     st.session_state.raw_notes_selection = new_file
                     select_file(new_file)
                     st.rerun()
+
+        
 
     else:
         st.info("No raw notes found in daily/ directory")
@@ -242,7 +267,7 @@ def render_analysis_files_section(notes_dir: Path) -> None:
         
         if st.button("🔄 Refresh", use_container_width=True, key="btn_filter_refresh"):
             st.rerun()
-            
+
     else:
         st.info("No analysis files found")
 
