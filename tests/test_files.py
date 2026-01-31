@@ -85,7 +85,7 @@ class TestLoadTaskNotesUsb:
              patch("tasktriage.files.get_active_source", return_value="usb"):
             from tasktriage.files import load_task_notes
 
-            with pytest.raises(FileNotFoundError, match="No input directories"):
+            with pytest.raises(FileNotFoundError, match="No unanalyzed notes files found"):
                 load_task_notes("daily")
 
     def test_raises_when_no_unanalyzed_files(self, mock_usb_dir):

@@ -30,19 +30,19 @@ def render_quick_markup_tools() -> None:
     Displays copyable task markers for completed, removed, and urgent tasks.
     """
     st.markdown('<p class="section-header">Quick Markup</p>', unsafe_allow_html=True)
-    st.caption("Copyable task markers ( ✓ Completed, ✗ Removed, ☆ Urgent )")
+    st.caption("Copyable task markers ( ✓ Completed, ✗ Removed, * Urgent )")
 
     # Show markup text
     col1, col2, col3 = st.columns(3, width=200)
 
     with col1:
-        st.code(" ✓", language=None)
+        st.code("✓", language=None)
 
     with col2:
-        st.code(" ✗", language=None)
+        st.code("✗", language=None)
 
     with col3:
-        st.code(" ☆", language=None)
+        st.code("*", language=None)
 
 
 def render_progress_display(progress_messages: list[str]) -> None:

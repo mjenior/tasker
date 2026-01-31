@@ -113,7 +113,7 @@ def _needs_reanalysis_usb(notes_path: Path, analysis_path: Path) -> bool:
     return False
 
 
-def _load_task_notes_usb(notes_type: str = "daily", file_preference: str = "png") -> tuple[str, Path, datetime]:
+def _load_task_notes_usb(notes_type: str = "daily", file_preference: str = "txt") -> tuple[str, Path, datetime]:
     """Load task notes from all configured local input directories.
 
     Checks all available input directories (EXTERNAL_INPUT_DIR, LOCAL_INPUT_DIR)
@@ -219,7 +219,7 @@ def _load_task_notes_usb(notes_type: str = "daily", file_preference: str = "png"
     )
 
 
-def _load_all_unanalyzed_task_notes_usb(notes_type: str = "daily", file_preference: str = "png") -> list[tuple[str, Path, datetime]]:
+def _load_all_unanalyzed_task_notes_usb(notes_type: str = "daily", file_preference: str = "txt") -> list[tuple[str, Path, datetime]]:
     """Load all unanalyzed task notes from all configured local input directories.
 
     Checks all available input directories (EXTERNAL_INPUT_DIR, LOCAL_INPUT_DIR)
@@ -655,7 +655,7 @@ def _needs_reanalysis_gdrive(notes_type: str, timestamp: str, file_info: dict) -
     return False
 
 
-def _load_task_notes_gdrive(notes_type: str = "daily", file_preference: str = "png") -> tuple[str, Path, datetime]:
+def _load_task_notes_gdrive(notes_type: str = "daily", file_preference: str = "txt") -> tuple[str, Path, datetime]:
     """Load task notes from Google Drive.
 
     Args:
@@ -766,7 +766,7 @@ def _load_task_notes_gdrive(notes_type: str = "daily", file_preference: str = "p
     )
 
 
-def _load_all_unanalyzed_task_notes_gdrive(notes_type: str = "daily", file_preference: str = "png") -> list[tuple[str, Path, datetime]]:
+def _load_all_unanalyzed_task_notes_gdrive(notes_type: str = "daily", file_preference: str = "txt") -> list[tuple[str, Path, datetime]]:
     """Load all unanalyzed task notes from Google Drive.
 
     Args:
@@ -1091,17 +1091,19 @@ def _save_raw_text_gdrive(raw_text: str, input_path: Path) -> Path:
 # Public API (automatically selects source based on configuration)
 # =============================================================================
 
-def load_task_notes(notes_type: str = "daily", file_preference: str = "png") -> tuple[str, Path, datetime]:
+def load_task_notes(notes_type: str = "daily", file_preference: str = "txt") -> tuple[str, Path, datetime]:
     """Load the most recent task notes file that hasn't been analyzed yet.
 
     Automatically selects between USB and Google Drive based on configuration.
+    If the preferred file type yields no results, automatically falls back to the
+    alternative file type (txt ↔ png/images).
 
     Supports both .txt files (read directly) and image files (.png, .jpg, .jpeg,
     .gif, .webp) which are processed through Claude's vision API to extract text.
 
     Args:
         notes_type: Type of notes to load (e.g., "daily", "weekly")
-        file_preference: File type preference - "png" or "txt" (default: "png")
+        file_preference: File type preference - "txt" or "png" (default: "txt")
 
     Returns:
         Tuple of (file contents, path to the notes file, parsed datetime from filename)
@@ -1111,23 +1113,41 @@ def load_task_notes(notes_type: str = "daily", file_preference: str = "png") -> 
     """
     source = get_active_source()
 
-    if source == "gdrive":
-        return _load_task_notes_gdrive(notes_type, file_preference)
-    else:
-        return _load_task_notes_usb(notes_type, file_preference)
+    # Try preferred file type first
+    try:
+        if source == "gdrive":
+            return _load_task_notes_gdrive(notes_type, file_preference)
+        else:
+            return _load_task_notes_usb(notes_type, file_preference)
+    except FileNotFoundError:
+        # Fallback to the other file type
+        fallback_preference = "png" if file_preference == "txt" else "txt"
+        try:
+            if source == "gdrive":
+                return _load_task_notes_gdrive(notes_type, fallback_preference)
+            else:
+                return _load_task_notes_usb(notes_type, fallback_preference)
+        except FileNotFoundError:
+            # Both types exhausted
+            raise FileNotFoundError(
+                f"No unanalyzed notes files found in any configured input directory. "
+                f"For image/PDF files, run Sync first to convert them to text."
+            )
 
 
-def load_all_unanalyzed_task_notes(notes_type: str = "daily", file_preference: str = "png") -> list[tuple[str, Path, datetime]]:
+def load_all_unanalyzed_task_notes(notes_type: str = "daily", file_preference: str = "txt") -> list[tuple[str, Path, datetime]]:
     """Load all unanalyzed task notes files.
 
     Automatically selects between USB and Google Drive based on configuration.
+    If the preferred file type yields no results, automatically falls back to the
+    alternative file type (txt ↔ png/images).
 
     Supports both .txt files (read directly) and image files (.png, .jpg, .jpeg,
     .gif, .webp) which are processed through Claude's vision API to extract text.
 
     Args:
         notes_type: Type of notes to load (e.g., "daily", "weekly")
-        file_preference: File type preference - "png" or "txt" (default: "png")
+        file_preference: File type preference - "txt" or "png" (default: "txt")
 
     Returns:
         List of tuples of (file contents, path to the notes file, parsed datetime from filename)
@@ -1137,10 +1157,26 @@ def load_all_unanalyzed_task_notes(notes_type: str = "daily", file_preference: s
     """
     source = get_active_source()
 
-    if source == "gdrive":
-        return _load_all_unanalyzed_task_notes_gdrive(notes_type, file_preference)
-    else:
-        return _load_all_unanalyzed_task_notes_usb(notes_type, file_preference)
+    # Try preferred file type first
+    try:
+        if source == "gdrive":
+            return _load_all_unanalyzed_task_notes_gdrive(notes_type, file_preference)
+        else:
+            return _load_all_unanalyzed_task_notes_usb(notes_type, file_preference)
+    except FileNotFoundError:
+        # Fallback to the other file type
+        fallback_preference = "png" if file_preference == "txt" else "txt"
+        try:
+            if source == "gdrive":
+                return _load_all_unanalyzed_task_notes_gdrive(notes_type, fallback_preference)
+            else:
+                return _load_all_unanalyzed_task_notes_usb(notes_type, fallback_preference)
+        except FileNotFoundError:
+            # Both types exhausted
+            raise FileNotFoundError(
+                f"No unanalyzed notes files found in any configured input directory. "
+                f"For image/PDF files, run Sync first to convert them to text."
+            )
 
 
 def _get_week_boundaries(date: datetime) -> tuple[datetime, datetime]:
@@ -1892,7 +1928,7 @@ def save_raw_text(raw_text: str, input_path: Path) -> Path:
     If input_path starts with "gdrive:", saves to Google Drive; otherwise saves locally.
 
     The raw text is saved as-is without any modifications or headers,
-    preserving any completion markers (✓, ✗, ☆) present in the original notes.
+    preserving any completion markers (✓, ✗, *) present in the original notes.
 
     Args:
         raw_text: The raw extracted text content

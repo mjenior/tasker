@@ -456,7 +456,7 @@ The UI opens in your browser at `http://localhost:8501` and provides:
 - Image preview for handwritten note images
 - Save/Revert buttons with unsaved changes indicator
 - Notes source status display
-- **Quick Markup Tools** - Easily add task markers (✓ completed, ✗ removed, ☆ urgent), which are automatically interpretted at the right side of each line.
+- **Quick Markup Tools** - Easily add task markers (✓ completed, ✗ removed, * urgent), which are automatically interpretted at the right side of each line.
 
 **Recommended Workflow:**
 1. **Sync** - Import new files and convert images/PDFs to text
