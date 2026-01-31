@@ -36,6 +36,10 @@ def analyze_tasks(
     # Extract model from config or use default
     model = config.pop("model", DEFAULT_MODEL)
 
+    # Remove non-ChatAnthropic configuration keys
+    # notes_source is a tasktriage-specific config, not a ChatAnthropic parameter
+    config.pop("notes_source", None)
+
     # Build ChatAnthropic with config parameters
     llm = ChatAnthropic(
         model=model,
