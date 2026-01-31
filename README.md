@@ -24,7 +24,7 @@ You might have this feeling too: You write a semi-disorganized list(s) of daily 
 - **Two-step workflow**: Sync first to copy and convert files, then Analyze when you're ready
 - **Sync operation**: Copies raw notes from input directories and converts images/PDFs to editable `.raw_notes.txt` files using Claude's vision API
 - **Smart re-analysis**: Detects when notes files are edited after their initial analysis and automatically includes them for re-analysis, replacing old analyses
-- Works with local/USB directories or Google Drive (your choice)
+- **Multi-source reading**: Works with any combination of local directories, USB devices, and Google Drive simultaneously
 - Tweak Claude's model parameters via a simple YAML file
 - GTD-based execution analysis with workload realism checks against healthy limits of 6-7 hours of focused work per day (because burnout is bad, actually)
 - **Temporal hierarchy**: Daily analyses are on-demand; Weekly → Monthly → Annual analyses auto-trigger when conditions are met
@@ -149,7 +149,7 @@ ANTHROPIC_API_KEY=your-api-key-here
 Want to tweak how Claude thinks? Edit `config.yaml`:
 
 ```yaml
-model: claude-3-5-haiku-20241022
+model: claude-haiku-4-5-20241022
 temperature: 0.7
 max_tokens: 4096
 top_p: 1.0
@@ -369,13 +369,13 @@ notes/
 - **Text files**: `.txt`
 - **Image files**: `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`
 - **PDF files**: `.pdf` (single or multi-page documents)
-- **Raw text files**: `.raw_notes.txt` (auto-generated from image/PDF analysis, preserves completion markers)
+- **Raw text files**: `.raw_notes.txt` (auto-generated from image/PDF analysis, editable and re-analyzable)
 
 Image and PDF files get run through Claude's vision API to extract your handwritten text automatically:
 - **Image files** are processed directly as images
-- **PDF files** are converted to images page-by-page and each page is processed with the vision API, then the extracted text from all pages is concatenated
+- **PDF files** are converted to images page-by-page, each page is processed with the vision API, then all extracted text is concatenated with page separators
 
-The extracted text is saved as a `.raw_notes.txt` file in parallel with the analysis, making it easy to edit the text directly in the UI if needed. If you edit a `.raw_notes.txt` file after its initial analysis, TaskTriage will detect the change and automatically re-analyze it on the next run.
+The extracted text is saved as a `.raw_notes.txt` file, making it easy to edit the text directly in the UI if needed. If you edit a `.raw_notes.txt` file after its initial analysis, TaskTriage will detect the change and automatically re-analyze it on the next run.
 
 ### Notes File Naming
 
@@ -468,10 +468,10 @@ The UI opens in your browser at `http://localhost:8501` and provides:
 TaskTriage uses a two-stage workflow for managing analysis files:
 
 **Stage 1: Generation (Primary Output)**
-All new analysis files and extracted raw notes are initially saved to `LOCAL_OUTPUT_DIR`. This is the "source of truth" for all generated files. This approach is necessary because:
-- Service accounts (for Google Drive) don't have storage quota to directly upload files
-- It provides a centralized location for all generated analyses
-- It serves as a backup location for your analysis history
+All new analysis files and extracted raw notes are initially saved to `LOCAL_OUTPUT_DIR`. This is the "source of truth" for all generated files. This approach provides:
+- A centralized location for all generated analyses
+- A backup location for your analysis history
+- Support for OAuth 2.0 authentication (full read/write access without service account limitations)
 
 **Stage 2: Bidirectional Sync**
 Once analyses are generated, you can use the **Sync button** in the web UI to perform true bidirectional synchronization between your output directory and all configured input directories:
@@ -489,7 +489,7 @@ Once analyses are generated, you can use the **Sync button** in the web UI to pe
 This bidirectional workflow ensures that:
 - Your analyses are always backed up in `LOCAL_OUTPUT_DIR`
 - Your note-taking device (USB/Supernote/reMarkable) stays synchronized with the latest analyses
-- Google Drive users can upload analyses manually or on-demand rather than being limited by service account quota constraints
+- Google Drive users have full read/write access to upload and manage analyses on-demand
 - New files added to any input location are automatically consolidated into your central output directory
 - You have a true sync experience rather than one-directional file distribution
 
@@ -518,7 +518,7 @@ Daily analyses only run when you explicitly press the Analyze button:
    - Image/PDF files without a corresponding `.raw_notes.txt` are skipped (run Sync first!)
    - **Smart re-analysis**: Includes files that were edited after their last analysis
 2. Processes them in parallel (up to 5 concurrent API calls)
-3. Each file gets analyzed and saved as `Notes/daily/{filename}.daily_analysis.txt`
+3. Each file gets analyzed and saved as `daily/{date}.triaged.txt`
    - If re-analyzing an edited file, the new analysis **replaces** the old one (no duplicates)
 4. Shows progress in real-time with success/failure indicators
 5. Prints: `Daily Summary: X successful, Y failed`
@@ -537,7 +537,7 @@ When triggered:
 1. Collects all daily analysis files from Monday-Friday of the qualifying week
 2. Combines them with date labels
 3. Generates a comprehensive weekly analysis looking at patterns and problems
-4. Saves to `Notes/weekly/{week_start}.weekly_analysis.txt`
+4. Saves to `weekly/weekN_MM_YYYY.triaged.txt` (e.g., `week4_12_2025.triaged.txt`)
 5. Prints: `Weekly Summary: X successful, Y failed`
 
 **LEVEL 3: Monthly Analysis (auto-triggers when conditions are met)**
@@ -550,7 +550,7 @@ When triggered:
 1. Collects all weekly analysis files from the qualifying month
 2. Combines them with week-range labels
 3. Generates a comprehensive monthly analysis synthesizing strategic patterns across the entire month
-4. Saves to `Notes/monthly/{month_label}.monthly_analysis.txt`
+4. Saves to `monthly/MM_YYYY.triaged.txt` (e.g., `12_2025.triaged.txt`)
 5. Prints: `Monthly Summary: X successful, Y failed`
 
 **LEVEL 4: Annual Analysis (auto-triggers when conditions are met)**
@@ -563,7 +563,7 @@ When triggered:
 1. Collects all monthly analysis files from the qualifying year
 2. Combines them with month labels
 3. Generates a comprehensive annual analysis synthesizing year-long accomplishments, learning, and strategic opportunities
-4. Saves to `Notes/annual/{year}.annual_analysis.txt`
+4. Saves to `annual/YYYY.triaged.txt` (e.g., `2025.triaged.txt`)
 5. Prints: `Annual Summary: X successful, Y failed`
 
 **Summary**: Daily analyses require explicit triggering (Sync → Analyze), but weekly/monthly/annual analyses cascade automatically once their conditions are met!
@@ -793,7 +793,7 @@ from tasktriage import (
 )
 
 # Check which source is being used for output
-print(f"Using: {get_active_source()}")  # "usb" or "gdrive"
+print(f"Using: {get_active_source()}")  # "usb", "local", or "gdrive"
 
 # Get prompt templates with dynamic variables
 daily_prompt = get_daily_prompt()
@@ -822,8 +822,10 @@ monthly_content, output_path, ms, me = collect_monthly_analyses_for_month(month_
 # Collect annual analyses for a specific year
 annual_content, output_path, year = collect_annual_analyses_for_year(2025)
 
-# Use the Google Drive client directly
-client = GoogleDriveClient()
+# Use the Google Drive client directly with OAuth credentials
+from tasktriage import get_oauth_credentials
+credentials = get_oauth_credentials()  # Returns stored OAuth 2.0 credentials
+client = GoogleDriveClient(credentials=credentials)
 files = client.list_notes_files("daily")
 ```
 
