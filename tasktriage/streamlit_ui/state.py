@@ -50,8 +50,8 @@ def initialize_session_state() -> None:
         st.session_state.analysis_files_selection = None
 
     # Analysis file type filters
-    if "filter_notes" not in st.session_state:
-        st.session_state.filter_notes = True
+    if "filter_daily" not in st.session_state:
+        st.session_state.filter_daily = True
     if "filter_weekly" not in st.session_state:
         st.session_state.filter_weekly = True
     if "filter_monthly" not in st.session_state:

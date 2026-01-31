@@ -140,27 +140,7 @@ def render_raw_notes_section(notes_dir: Path) -> None:
     """
     st.markdown('<p class="section-header">Raw Notes</p>', unsafe_allow_html=True)
 
-    # Add slider to filter by maximum age of files
-    max_age_days = st.slider(
-        "Maximum age (days)",
-        min_value=0,
-        max_value=365,
-        value=365,
-        step=1,
-        help="Show only files from the last N days. Set to 365 to show all files."
-    )
-
     raw_notes = list_raw_notes(notes_dir)
-    
-    # Filter files by age if slider is not at maximum
-    if max_age_days < 365 and raw_notes:
-        cutoff_date = datetime.now() - timedelta(days=max_age_days)
-        filtered_notes = []
-        for file_path, display_name in raw_notes:
-            file_date = parse_filename_datetime(file_path.name)
-            if file_date and file_date >= cutoff_date:
-                filtered_notes.append((file_path, display_name))
-        raw_notes = filtered_notes
     
     if raw_notes:
         # Set default selection if not set
@@ -177,20 +157,41 @@ def render_raw_notes_section(notes_dir: Path) -> None:
         )
         st.session_state.raw_notes_selection = selected_raw
 
-        btn_col1, btn_col2 = st.columns(2)
+        # Add slider to filter by maximum age of files
+        max_age_days = st.slider(
+            "Maximum age (days)",
+            min_value=0,
+            max_value=365,
+            value=365,
+            step=1,
+            help="Show only files from the last N days. Set to 365 to show all files from previous year."
+        )
+
+        # Filter files by age if slider is not at maximum
+        if max_age_days < 365 and raw_notes:
+            cutoff_date = datetime.now() - timedelta(days=max_age_days)
+            filtered_notes = []
+            for file_path, display_name in raw_notes:
+                file_date = parse_filename_datetime(file_path.name)
+                if file_date and file_date >= cutoff_date:
+                    filtered_notes.append((file_path, display_name))
+            raw_notes = filtered_notes
+
+        btn_col1, btn_col2, btn_col3 = st.columns(3)
         with btn_col1:
+            if st.button("🔄 Refresh", use_container_width=True, key="btn_refresh_raw"):
+                st.rerun()
+        with btn_col2:
             if st.button("📂 Open", use_container_width=True, key="btn_render_raw"):
                 select_file(selected_raw)
                 st.rerun()
-        with btn_col2:
+        with btn_col3:
             if st.button("📝 New", use_container_width=True, key="btn_new_raw"):
                 new_file = create_new_notes_file(notes_dir)
                 if new_file:
                     st.session_state.raw_notes_selection = new_file
                     select_file(new_file)
                     st.rerun()
-
-        
 
     else:
         st.info("No raw notes found in daily/ directory")
