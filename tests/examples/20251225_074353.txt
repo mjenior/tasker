@@ -1,12 +1,8 @@
-﻿Agents team
-    test new agent tone
-    compare Gemini version output 
-    create prompt/response test suite
-
- Admin/Other
+﻿                            12  11  25
+✓   test new agent tone  *
+✓   compare Gemini version output 
+✓   create prompt/response test suite
     submit timesheet
 ✓   request PTO
-
-Home
-✓    groceries
+✓   groceries
 ✓   wrap gifts

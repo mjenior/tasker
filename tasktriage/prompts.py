@@ -19,6 +19,7 @@ Analyze the provided task list to assess what was completed, what was abandoned,
 
 The input is a handwritten task list with the following structure:
 
+- **Date header**: Located in the top right corner of the page, formatted as two-digit numbers separated by spaces (e.g., "12  11  25" for date information)
 - **Tasks**: Listed as a different task per line with no categorical organization
 - **Task markers** (appear to the left of each task):
   - `✓` (checkmark) = Task completed during the day
