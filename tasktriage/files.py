@@ -1928,7 +1928,7 @@ def save_raw_text(raw_text: str, input_path: Path) -> Path:
     If input_path starts with "gdrive:", saves to Google Drive; otherwise saves locally.
 
     The raw text is saved as-is without any modifications or headers,
-    preserving any completion markers (✓, ✗, *) present in the original notes.
+    preserving any completion markers (✓, ✗, *) and subtask markers (↳) present in the original notes.
 
     Args:
         raw_text: The raw extracted text content

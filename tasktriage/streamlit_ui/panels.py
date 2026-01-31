@@ -49,7 +49,7 @@ HELP_TEXT = """TaskTriage uses Claude AI to turn your handwritten task notes int
 - Full-height text editor for viewing and editing files
 - Image preview for handwritten note images
 - Save/Revert buttons with unsaved changes indicator
-- **Quick Markup Tools** - Add task markers (✓ completed, ✗ removed, * urgent)
+- **Quick Markup Tools** - Add task markers (✓ completed, ✗ removed, * urgent, ↳ subtask)
 
 **Note**: Image/PDF files must be synced first to create `.raw_notes.txt` files before they can be analyzed.
 """

@@ -1,0 +1,11 @@
+      01 30 29
+✓ fix Task Triage repo
+✓ finish ECN bot fixes
+✗ ↳ meet w/ Matt C
+    submit weekly time sheet
+✓ finish memory system plan
+✓ f- in ish RLM module
+✓ Jason I:L
+        ↳ CEO simulator
+✓ make dinner
+

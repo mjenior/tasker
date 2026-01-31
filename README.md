@@ -456,7 +456,7 @@ The UI opens in your browser at `http://localhost:8501` and provides:
 - Image preview for handwritten note images
 - Save/Revert buttons with unsaved changes indicator
 - Notes source status display
-- **Quick Markup Tools** - Easily add task markers (✓ completed, ✗ removed, * urgent), which are automatically interpretted at the right side of each line.
+- **Quick Markup Tools** - Easily add task markers (✓ completed, ✗ removed, * urgent, ↳ subtask), which are automatically interpreted at the right side of each line.
 
 **Recommended Workflow:**
 1. **Sync** - Import new files and convert images/PDFs to text
@@ -567,6 +567,46 @@ When triggered:
 5. Prints: `Annual Summary: X successful, Y failed`
 
 **Summary**: Daily analyses require explicit triggering (Sync → Analyze), but weekly/monthly/annual analyses cascade automatically once their conditions are met!
+
+## Task Notation Format
+
+TaskTriage recognizes several special markers in your task lists that help identify task status and relationships. Use these notations to enhance your daily task lists:
+
+### Task Status Markers (left side of task)
+
+- **`✓` (checkmark)** - Task completed during the day
+- **`✗` (or X)** - Task removed or abandoned during the day
+- **No marker** - Standard task that was planned but not completed
+
+### Subtask Marker
+
+- **`↳` (rightwards arrow)** - Indicates a subtask directly related to the task above it. Subtasks are typically indented with spaces and represent work that supports or elaborates on the parent task.
+
+Example:
+```
+✓ Jason 1:1
+        ↳ CEO simulator
+✗ meet w/ Matt C
+        ↳ discuss Q1 plans
+```
+
+In this example:
+- "Jason 1:1" was completed, and "CEO simulator" is the related subtask (also completed)
+- "meet w/ Matt C" was abandoned, and "discuss Q1 plans" is the related subtask (also abandoned)
+
+Subtasks are analyzed independently but with full context of their parent task relationship, allowing TaskTriage to understand the work structure and how parent-subtask pairs correlate with completion success.
+
+### Priority Marker (right side of task)
+
+- **`*` (asterisk)** - Marks urgent/high-priority tasks
+
+Example:
+```
+✓ finish ECN bot fixes *
+✗ ↳ meet w/ Matt C
+```
+
+This marks "finish ECN bot fixes" as critical/urgent.
 
 ## Daily Analysis Output
 

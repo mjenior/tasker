@@ -27,22 +27,22 @@ def render_image_preview(file_path: Path) -> None:
 def render_quick_markup_tools() -> None:
     """Render the quick markup tools section.
 
-    Displays copyable task markers for completed, removed, and urgent tasks.
+    Displays copyable task markers for completed, removed, urgent tasks, and subtasks.
     """
     st.markdown('<p class="section-header">Quick Markup</p>', unsafe_allow_html=True)
-    st.caption("Copyable task markers ( ✓ Completed, ✗ Removed, * Urgent )")
+    st.caption("Copyable task markers ( ✓ Completed, ✗ Removed, * Urgent, ↳ Subtask )")
 
     # Show markup text
-    col1, col2, col3 = st.columns(3, width=200)
+    col1, col2, col3, col4 = st.columns(4, width=200)
 
     with col1:
         st.code("✓", language=None)
-
     with col2:
         st.code("✗", language=None)
-
     with col3:
         st.code("*", language=None)
+    with col4:
+        st.code("↳", language=None)
 
 
 def render_progress_display(progress_messages: list[str]) -> None:

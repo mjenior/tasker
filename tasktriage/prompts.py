@@ -19,12 +19,13 @@ Analyze the provided task list to assess what was completed, what was abandoned,
 
 The input is a handwritten task list with the following structure:
 
-- **Date header**: Located in the top right corner of the page, formatted as two-digit numbers separated by spaces (e.g., "12  11  25" for date information)
+- **Date header**: Located in the top line of the page, formatted as two-digit numbers separated by spaces (e.g., "12  11  25" for date information)
 - **Tasks**: Listed as a different task per line with no categorical organization
 - **Task markers** (appear to the left of each task):
   - `✓` (checkmark) = Task completed during the day
   - `✗` (or X) = Task removed or abandoned during the day
   - No marker = Standard task that was planned but not completed
+- **Subtask markers**: Lines beginning with `↳` (rightwards arrow) indicate subtasks directly related to the preceding task. Subtasks may be indented and are understood to support or elaborate on the parent task above them.
 - **Critical Tasks**: Marked with a `*` (asterisk) to the right are urgent/high-priority
 - **Task descriptions**: May vary in clarity, scope, and completeness.
 
@@ -142,6 +143,14 @@ For each task that proceeds to analysis:
   - `Low` — Routine or administrative tasks
 - Estimate time required (use reasonable assumptions based on task scope)
 - Provide a brief analysis of why it succeeded, was abandoned, or remained incomplete
+
+**Subtask Handling**
+
+Subtasks (marked with `↳`) are understood as directly supporting the parent task above them:
+- **Completion status inheritance**: A subtask's completion status (✓ or ✗) is independent of its parent, but note their relationship in the analysis
+- **Grouping in analysis**: When analyzing, treat subtasks as distinct tasks with their own completion assessments, but always reference their parent task to provide context for the work relationship
+- **Energy and time estimation**: Estimate subtask energy and time independently, as they may differ from the parent task's requirements
+- **Pattern analysis**: Include subtasks in execution pattern analysis, noting whether parent-subtask relationships correlate with completion success or failure
 
 ### Step 2: Identify Execution Patterns
 
@@ -821,8 +830,9 @@ Extract all text from the provided image of handwritten task notes, preserving t
    - `✓` (checkmark) = Task completed
    - `✗` (or X) = Task removed or abandoned
    - `*` (asterisk) = Urgent/high-priority task
+   - `↳` (rightwards arrow) = Subtask directly related to the parent task above it
    - No marker = Standard planned task
-2. **One task per line**: Each task should be on its own line with no indentation or categorical grouping
+2. **One task per line**: Each task should be on its own line with no indentation or categorical grouping. Subtasks should preserve their indentation as shown in the original.
 3. **No categorical organization**: Extract tasks in a flat list, regardless of how they were organized in the original document
 4. **Preserve task order**: Maintain the order tasks appear in the original document
 5. **No interpretation**: Do not add, remove, or modify any content - transcribe exactly what you see
@@ -833,13 +843,14 @@ Extract all text from the provided image of handwritten task notes, preserving t
 ```
   Task 1 description
 ✓ Task 2 description *
-✓ Task 3 description
+✓ Jason 1:1
+        ↳ CEO simulator
 ✗ Task 4 description
   Task 5 description
   Task 6 description *
 ```
 
-Extract all visible text from the image now, outputting each task on its own line with markers preserved in their original positions."""
+Extract all visible text from the image now, outputting each task on its own line with markers preserved in their original positions, and preserving subtask indentation.
 
 
 def get_daily_prompt() -> ChatPromptTemplate:

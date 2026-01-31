@@ -1,8 +1,0 @@
-﻿                            12  11  25
-✓   test new agent tone  *
-✓   compare Gemini version output 
-✓   create prompt/response test suite
-    submit timesheet
-✓   request PTO
-✓   groceries
-✓   wrap gifts
