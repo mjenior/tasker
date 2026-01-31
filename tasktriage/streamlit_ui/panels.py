@@ -19,6 +19,7 @@ from tasktriage import (
 from .file_ops import (
     list_raw_notes,
     list_analysis_files,
+    filter_analysis_files,
     load_file_content,
     save_file_content,
     create_new_notes_file,
@@ -84,7 +85,7 @@ def render_actions_section(notes_dir: Path | None) -> None:
 
             def progress_callback(msg: str, seconds: int = 5):
                 with st.empty():
-                    status_placeholder.info(f"• {msg}")
+                    status_placeholder.info(msg)
                     time.sleep(seconds)
                     st.empty()
 
@@ -165,6 +166,7 @@ def render_raw_notes_section(notes_dir: Path) -> None:
                     st.session_state.raw_notes_selection = new_file
                     select_file(new_file)
                     st.rerun()
+
     else:
         st.info("No raw notes found in daily/ directory")
         if st.button("📝 New", use_container_width=True, key="btn_new_raw_empty"):
@@ -184,24 +186,63 @@ def render_analysis_files_section(notes_dir: Path) -> None:
     st.markdown('<p class="section-header">Analysis Files</p>', unsafe_allow_html=True)
 
     analysis_files = list_analysis_files(notes_dir)
-    if analysis_files:
+    
+    # Apply filters
+    filtered_files = filter_analysis_files(
+        analysis_files,
+        include_notes=st.session_state.filter_daily,
+        include_weekly=st.session_state.filter_weekly,
+        include_monthly=st.session_state.filter_monthly,
+        include_annual=st.session_state.filter_annual,
+    )
+    
+    if filtered_files:
         # Set default selection if not set
-        if st.session_state.analysis_files_selection is None and analysis_files:
-            st.session_state.analysis_files_selection = analysis_files[0][0]
+        if st.session_state.analysis_files_selection is None and filtered_files:
+            st.session_state.analysis_files_selection = filtered_files[0][0]
 
         selected_analysis = st.selectbox(
             "Select an analysis file",
-            options=[f[0] for f in analysis_files],
-            format_func=lambda x: next((f[1] for f in analysis_files if f[0] == x), x.name),
+            options=[f[0] for f in filtered_files],
+            format_func=lambda x: next((f[1] for f in filtered_files if f[0] == x), x.name),
             key="analysis_files_select",
             label_visibility="collapsed",
-            index=[f[0] for f in analysis_files].index(st.session_state.analysis_files_selection) if st.session_state.analysis_files_selection in [f[0] for f in analysis_files] else 0
+            index=[f[0] for f in filtered_files].index(st.session_state.analysis_files_selection) if st.session_state.analysis_files_selection in [f[0] for f in filtered_files] else 0
         )
         st.session_state.analysis_files_selection = selected_analysis
 
         if st.button("📂 Open", use_container_width=True, key="btn_render_analysis"):
             select_file(selected_analysis)
             st.rerun()
+        
+        # Filter controls for analysis files
+        filter_col1, filter_col2 = st.columns(2)
+        with filter_col1:
+            st.session_state.filter_daily = st.checkbox(
+                "Notes (Daily)",
+                value=st.session_state.filter_daily,
+                key="checkbox_filter_daily"
+            )
+            st.session_state.filter_monthly = st.checkbox(
+                "Monthly",
+                value=st.session_state.filter_monthly,
+                key="checkbox_filter_monthly"
+            )
+        with filter_col2:
+            st.session_state.filter_weekly = st.checkbox(
+                "Weekly",
+                value=st.session_state.filter_weekly,
+                key="checkbox_filter_weekly"
+            )
+            st.session_state.filter_annual = st.checkbox(
+                "Annual",
+                value=st.session_state.filter_annual,
+                key="checkbox_filter_annual"
+            )
+        
+        if st.button("🔄 Refresh", use_container_width=True, key="btn_filter_refresh"):
+            st.rerun()
+            
     else:
         st.info("No analysis files found")
 

@@ -49,6 +49,16 @@ def initialize_session_state() -> None:
     if "analysis_files_selection" not in st.session_state:
         st.session_state.analysis_files_selection = None
 
+    # Analysis file type filters
+    if "filter_notes" not in st.session_state:
+        st.session_state.filter_notes = True
+    if "filter_weekly" not in st.session_state:
+        st.session_state.filter_weekly = True
+    if "filter_monthly" not in st.session_state:
+        st.session_state.filter_monthly = True
+    if "filter_annual" not in st.session_state:
+        st.session_state.filter_annual = True
+
     # OAuth authentication state
     if "oauth_authenticated" not in st.session_state:
         st.session_state.oauth_authenticated = False

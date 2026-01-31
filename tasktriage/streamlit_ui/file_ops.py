@@ -175,6 +175,35 @@ def list_analysis_files(notes_dir: Path) -> list[tuple[Path, str]]:
     return files
 
 
+def filter_analysis_files(
+    files: list[tuple[Path, str]],
+    include_notes: bool = True,
+    include_weekly: bool = True,
+    include_monthly: bool = True,
+    include_annual: bool = True,
+) -> list[tuple[Path, str]]:
+    """Filter analysis files based on type preferences.
+
+    Args:
+        files: List of tuples (file_path, display_name) from list_analysis_files
+        include_notes: Include daily analysis files
+        include_weekly: Include weekly analysis files
+        include_monthly: Include monthly analysis files
+        include_annual: Include annual analysis files
+
+    Returns:
+        Filtered list of tuples (file_path, display_name)
+    """
+    filters = {
+        "DAILY": include_notes,
+        "WEEKLY": include_weekly,
+        "MONTHLY": include_monthly,
+        "ANNUAL": include_annual,
+    }
+
+    return [f for f in files if filters.get(f[1].split("]")[0][1:], True)]
+
+
 def load_file_content(file_path: Path) -> str:
     """Load content from a file.
 
