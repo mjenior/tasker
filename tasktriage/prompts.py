@@ -851,21 +851,21 @@ Extract all text from the provided image of handwritten task notes, preserving t
 ```
 
 Extract all visible text from the image now, outputting each task on its own line with markers preserved in their original positions, and preserving subtask indentation.
-
+"""
 
 def get_daily_prompt() -> ChatPromptTemplate:
     """Get the daily retrospective analysis prompt template.
 
     Variables:
-        current_date: The formatted date string (e.g., "Monday, December 30, 2024")
+        current_date: The formatted date string (e.g., Monday, December 30, 2024)
         task_notes: The raw task notes content with completion markers
 
     Returns:
         ChatPromptTemplate configured for daily retrospective analysis
     """
     return ChatPromptTemplate.from_messages([
-        ("system", DAILY_SYSTEM_PROMPT),
-        ("human", DAILY_HUMAN_PROMPT),
+        ('system', DAILY_SYSTEM_PROMPT),
+        ('human', DAILY_HUMAN_PROMPT),
     ])
 
 
@@ -873,8 +873,8 @@ def get_weekly_prompt() -> ChatPromptTemplate:
     """Get the weekly analysis prompt template.
 
     Variables:
-        week_start: Start date of the analysis period (e.g., "Monday, December 23, 2024")
-        week_end: End date of the analysis period (e.g., "Sunday, December 29, 2024")
+        week_start: Start date of the analysis period (e.g., Monday, December 23, 2024)
+        week_end: End date of the analysis period (e.g., Sunday, December 29, 2024)
         task_notes: The combined daily analyses content
 
     Returns:
