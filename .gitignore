@@ -19,6 +19,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+task_context.md
 
 # Virtual environments
 .venv/
